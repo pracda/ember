@@ -4,6 +4,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import {
   ApiError,
+  PinLogin,
   api,
   useActiveOrders,
   useAuth,
@@ -12,16 +13,15 @@ import {
   type Order,
 } from '@ember/shared';
 import { TicketCard } from './components/TicketCard';
-import { Login } from './components/Login';
 import { useNow } from './lib/useNow';
 
 // Cooks (and managers) run the kitchen display; the backend enforces the role.
 const KITCHEN_ROLES = ['COOK', 'MANAGER'];
 
 export default function App() {
-  const { session, login, logout } = useAuth();
+  const { session, loginWithPin, logout } = useAuth();
   if (!session) {
-    return <Login onSubmit={login} hint="Demo: cook / cook123" />;
+    return <PinLogin title="Ember Kitchen" roles={['COOK', 'MANAGER']} dark onSubmit={loginWithPin} />;
   }
   if (!KITCHEN_ROLES.includes(session.role)) {
     return (

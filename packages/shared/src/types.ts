@@ -95,6 +95,42 @@ export interface AuthSession {
   token: string;
   username: string;
   role: Role;
+  displayName: string;
+}
+
+/** A pickable staff member on the station sign-in roster (no secrets). */
+export interface RosterEntry {
+  id: number;
+  displayName: string;
+  role: Role;
+}
+
+/** A staff member in the admin Employees tab. */
+export interface Staff {
+  id: number;
+  username: string;
+  displayName: string;
+  role: Role;
+  active: boolean;
+  hasPin: boolean;
+  hasPassword: boolean;
+  createdAt: string;
+}
+
+/** Create-staff payload (at least one of pin/password required). */
+export interface StaffInput {
+  username: string;
+  displayName: string;
+  role: Role;
+  pin?: string;
+  password?: string;
+}
+
+/** Update-staff payload (username is immutable). */
+export interface StaffUpdate {
+  displayName: string;
+  role: Role;
+  active: boolean;
 }
 
 /** Manager payload to create or update a menu item (mirrors MenuItemRequest). */

@@ -14,6 +14,10 @@ import type {
   MenuItem,
   MenuItemInput,
   Order,
+  RosterEntry,
+  Staff,
+  StaffInput,
+  StaffUpdate,
 } from './types';
 
 export const apiBase: string = import.meta.env.VITE_API_BASE ?? 'http://localhost:8080';
@@ -75,6 +79,15 @@ export const api = {
     setSession(session);
     return session;
   },
+  getRoster: () => request<RosterEntry[]>('/api/auth/roster'),
+  loginWithPin: async (staffId: number, pin: string): Promise<AuthSession> => {
+    const session = await request<AuthSession>('/api/auth/pin', {
+      method: 'POST',
+      body: JSON.stringify({ staffId, pin }),
+    });
+    setSession(session);
+    return session;
+  },
 
   // menu + orders
   getMenu: () => request<MenuItem[]>('/api/menu'),
@@ -97,6 +110,18 @@ export const api = {
   // reporting (MANAGER)
   getDaySummary: (date?: string) =>
     request<DaySummary>(`/api/reports/day-summary${date ? `?date=${date}` : ''}`),
+
+  // employees (MANAGER)
+  getStaff: () => request<Staff[]>('/api/staff'),
+  createStaff: (input: StaffInput) =>
+    request<Staff>('/api/staff', { method: 'POST', body: JSON.stringify(input) }),
+  updateStaff: (id: number, update: StaffUpdate) =>
+    request<Staff>(`/api/staff/${id}`, { method: 'PUT', body: JSON.stringify(update) }),
+  setStaffPin: (id: number, pin: string) =>
+    request<void>(`/api/staff/${id}/pin`, { method: 'PUT', body: JSON.stringify({ pin }) }),
+  setStaffPassword: (id: number, password: string) =>
+    request<void>(`/api/staff/${id}/password`, { method: 'PUT', body: JSON.stringify({ password }) }),
+  deleteStaff: (id: number) => request<void>(`/api/staff/${id}`, { method: 'DELETE' }),
 };
 
 export type Api = typeof api;

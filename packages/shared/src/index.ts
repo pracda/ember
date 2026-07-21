@@ -7,3 +7,4 @@ export * from './auth';
 export * from './useAuth';
 export * from './useOrderStore';
 export * from './useOrderStream';
+export * from './components/PinLogin';

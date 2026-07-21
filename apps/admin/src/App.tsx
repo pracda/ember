@@ -5,8 +5,9 @@ import { useAuth } from '@ember/shared';
 import { Login } from './components/Login';
 import { MenuEditor } from './components/MenuEditor';
 import { DaySummary } from './components/DaySummary';
+import { Employees } from './components/Employees';
 
-type Tab = 'menu' | 'report';
+type Tab = 'menu' | 'report' | 'staff';
 
 export default function App() {
   const { session, login, logout } = useAuth();
@@ -37,6 +38,9 @@ export default function App() {
 function Admin({ username, onLogout }: { username: string; onLogout: () => void }) {
   const [tab, setTab] = useState<Tab>('menu');
 
+  const body =
+    tab === 'menu' ? <MenuEditor /> : tab === 'report' ? <DaySummary /> : <Employees currentUsername={username} />;
+
   return (
     <div className="min-h-screen bg-char text-bone font-body">
       <header className="flex items-center justify-between border-b border-steel px-6 py-3">
@@ -46,6 +50,7 @@ function Admin({ username, onLogout }: { username: string; onLogout: () => void 
           </h1>
           <nav className="flex gap-2">
             <TabButton active={tab === 'menu'} onClick={() => setTab('menu')}>Menu</TabButton>
+            <TabButton active={tab === 'staff'} onClick={() => setTab('staff')}>Employees</TabButton>
             <TabButton active={tab === 'report'} onClick={() => setTab('report')}>Reports</TabButton>
           </nav>
         </div>
@@ -60,7 +65,7 @@ function Admin({ username, onLogout }: { username: string; onLogout: () => void 
         </div>
       </header>
 
-      {tab === 'menu' ? <MenuEditor /> : <DaySummary />}
+      {body}
     </div>
   );
 }

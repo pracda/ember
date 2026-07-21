@@ -3,13 +3,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   ApiError,
+  PinLogin,
   api,
   useAuth,
   useOrderStream,
   type MenuItem,
   type OrderType,
 } from '@ember/shared';
-import { Login } from './components/Login';
 import { CategoryTabs, orderedCategories } from './components/CategoryTabs';
 import { MenuGrid } from './components/MenuGrid';
 import { CustomizeModal } from './components/CustomizeModal';
@@ -29,9 +29,9 @@ import {
 const POS_ROLES = ['CASHIER', 'MANAGER'];
 
 export default function App() {
-  const { session, login, logout } = useAuth();
+  const { session, loginWithPin, logout } = useAuth();
   if (!session) {
-    return <Login onSubmit={login} hint="Demo: cashier / cashier123" />;
+    return <PinLogin title="Ember POS" roles={['CASHIER', 'MANAGER']} onSubmit={loginWithPin} />;
   }
   if (!POS_ROLES.includes(session.role)) {
     return (

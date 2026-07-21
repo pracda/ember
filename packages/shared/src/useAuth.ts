@@ -7,6 +7,7 @@ import type { AuthSession } from './types';
 export interface UseAuth {
   session: AuthSession | null;
   login: (username: string, password: string) => Promise<AuthSession>;
+  loginWithPin: (staffId: number, pin: string) => Promise<AuthSession>;
   logout: () => void;
 }
 
@@ -15,6 +16,7 @@ export function useAuth(): UseAuth {
   return {
     session,
     login: (username, password) => api.login(username, password),
+    loginWithPin: (staffId, pin) => api.loginWithPin(staffId, pin),
     logout,
   };
 }
