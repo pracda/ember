@@ -1,0 +1,56 @@
+spring:
+  application:
+    name: ember-backend
+
+# ---- Ember business configuration ----
+ember:
+  tax-rate: 0.085          # 8.5% sales tax on the subtotal
+  meal-upcharge: 3.50      # flat upcharge to make an eligible item a meal
+  allowed-origins:         # the three station front-ends
+    - http://localhost:5173
+    - http://localhost:3000
+
+---
+# ================= DEFAULT (dev) — in-memory H2 =================
+spring:
+  config:
+    activate:
+      on-profile: default
+  datasource:
+    url: jdbc:h2:mem:ember;DB_CLOSE_DELAY=-1
+    username: sa
+    password: ""
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate.format_sql: true
+  flyway:
+    enabled: false         # dev builds the schema from entities (create-drop); Flyway is prod-only
+  h2:
+    console:
+      enabled: true        # http://localhost:8080/h2-console
+
+---
+# ================= PROD — PostgreSQL / AWS RDS =================
+# Activate with: SPRING_PROFILES_ACTIVE=prod
+# Supply DB_URL / DB_USER / DB_PASSWORD and CORS origins via environment.
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: validate   # schema is owned by Flyway migrations, verified on boot
+    open-in-view: false
+  flyway:
+    enabled: true          # run db/migration/*.sql against RDS on startup
+
+ember:
+  allowed-origins: ${CORS_ORIGINS}
