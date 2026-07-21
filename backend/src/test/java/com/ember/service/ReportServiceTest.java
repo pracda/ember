@@ -1,9 +1,13 @@
 package com.ember.service;
 
 import com.ember.config.EmberProperties;
+import com.ember.domain.MenuItem;
 import com.ember.domain.Order;
+import com.ember.domain.OrderLine;
 import com.ember.domain.OrderType;
+import com.ember.repository.MenuItemRepository;
 import com.ember.repository.OrderRepository;
+import com.ember.repository.StaffRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
@@ -19,22 +23,43 @@ class ReportServiceTest {
 
     @Autowired
     private OrderRepository orders;
+    @Autowired
+    private MenuItemRepository menu;
+    @Autowired
+    private StaffRepository staff;
 
     private int ticket = 1;
 
     private ReportService service() {
         EmberProperties props = new EmberProperties();
         props.setTimezone(ZoneId.of("UTC"));
-        return new ReportService(orders, props);
+        return new ReportService(orders, menu, staff, props);
     }
 
     private void persist(String total, boolean toReady) {
         Order o = new Order(ticket++, OrderType.DINE_IN);
         o.setTotal(new BigDecimal(total));
         if (toReady) {
-            o.advance(); // NEW -> PREP (startedAt)
-            o.advance(); // PREP -> READY (readyAt)
+            o.advance();
+            o.advance();
         }
+        orders.saveAndFlush(o);
+    }
+
+    private OrderLine line(String menuItemId, String name, int qty, String unit) {
+        OrderLine l = new OrderLine();
+        l.setMenuItemId(menuItemId);
+        l.setItemName(name);
+        l.setQuantity(qty);
+        l.setUnitPrice(new BigDecimal(unit));
+        return l;
+    }
+
+    private void persistOrder(OrderType type, String total, String servedBy, OrderLine... lines) {
+        Order o = new Order(ticket++, type);
+        o.setTotal(new BigDecimal(total));
+        o.setServedBy(servedBy);
+        for (OrderLine l : lines) o.addLine(l);
         orders.saveAndFlush(o);
     }
 
@@ -61,5 +86,44 @@ class ReportServiceTest {
         assertThat(summary.orderCount()).isZero();
         assertThat(summary.revenue()).isEqualByComparingTo("0.00");
         assertThat(summary.avgPrepSeconds()).isNull();
+    }
+
+    @Test
+    void analyticsAggregatesItemsCategoriesTypesAndStaff() {
+        menu.saveAndFlush(new MenuItem("b1", "Ember Smash", "Burgers", new BigDecimal("6.50"), true));
+        menu.saveAndFlush(new MenuItem("d1", "Fountain Soda", "Drinks", new BigDecimal("2.25"), false));
+
+        persistOrder(OrderType.DINE_IN, "16.00", "cashier",
+                line("b1", "Ember Smash", 2, "6.50"), line("d1", "Fountain Soda", 1, "3.00"));
+        persistOrder(OrderType.TO_GO, "6.50", "cook", line("b1", "Ember Smash", 1, "6.50"));
+
+        LocalDate today = LocalDate.now(ZoneId.of("UTC"));
+        var a = service().analytics(today, today);
+
+        assertThat(a.orderCount()).isEqualTo(2);
+        assertThat(a.revenue()).isEqualByComparingTo("22.50");
+        assertThat(a.avgOrderValue()).isEqualByComparingTo("11.25");
+
+        // top items: Ember Smash 3 @ 6.50 = 19.50, Fountain Soda 1 @ 3.00
+        assertThat(a.topItems().get(0).itemName()).isEqualTo("Ember Smash");
+        assertThat(a.topItems().get(0).quantity()).isEqualTo(3);
+        assertThat(a.topItems().get(0).revenue()).isEqualByComparingTo("19.50");
+
+        // categories reconcile
+        assertThat(a.byCategory()).anySatisfy(c -> {
+            assertThat(c.category()).isEqualTo("Burgers");
+            assertThat(c.revenue()).isEqualByComparingTo("19.50");
+        });
+
+        // order type split
+        assertThat(a.byOrderType()).hasSize(2);
+
+        // staff sales
+        assertThat(a.byStaff()).extracting(s -> s.displayName())
+                .contains("cashier", "cook"); // no Staff rows persisted → falls back to username
+
+        // hours always cover 24 buckets
+        assertThat(a.byHour()).hasSize(24);
+        assertThat(a.salesByDay()).hasSize(1);
     }
 }

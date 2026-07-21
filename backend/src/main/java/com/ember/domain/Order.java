@@ -70,6 +70,10 @@ public class Order {
     @Column(name = "collected_at")
     private Instant collectedAt;
 
+    /** Username of the staff member who created the order (for the staff sales report). */
+    @Column(name = "served_by")
+    private String servedBy;
+
     protected Order() { }
 
     public Order(int ticketNumber, OrderType type) {
@@ -142,4 +146,7 @@ public class Order {
     public Instant getStartedAt() { return startedAt; }
     public Instant getReadyAt() { return readyAt; }
     public Instant getCollectedAt() { return collectedAt; }
+
+    public String getServedBy() { return servedBy; }
+    public void setServedBy(String servedBy) { this.servedBy = servedBy; }
 }

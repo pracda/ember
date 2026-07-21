@@ -2,6 +2,7 @@ package com.ember.web;
 
 import com.ember.config.EmberProperties;
 import com.ember.service.ReportService;
+import com.ember.web.dto.AnalyticsResponse;
 import com.ember.web.dto.DaySummaryResponse;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,5 +30,19 @@ public class ReportController {
     public DaySummaryResponse daySummary(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         return reports.daySummary(date != null ? date : LocalDate.now(props.getTimezone()));
+    }
+
+    /**
+     * {@code GET /api/reports/analytics?from=YYYY-MM-DD&to=YYYY-MM-DD} — the manager
+     * dashboard. Both dates default to today (outlet timezone).
+     */
+    @GetMapping("/analytics")
+    public AnalyticsResponse analytics(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        LocalDate today = LocalDate.now(props.getTimezone());
+        LocalDate start = from != null ? from : today;
+        LocalDate end = to != null ? to : today;
+        return reports.analytics(start, end);
     }
 }

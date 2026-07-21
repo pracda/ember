@@ -13,6 +13,9 @@ import com.ember.web.dto.OrderLineRequest;
 import com.ember.web.dto.OrderResponse;
 import com.ember.web.error.NotFoundException;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,6 +50,7 @@ public class OrderService {
     @Transactional
     public OrderResponse create(CreateOrderRequest request) {
         Order order = new Order(tickets.next(), request.type());
+        order.setServedBy(currentUsername());
 
         BigDecimal subtotal = BigDecimal.ZERO;
         for (OrderLineRequest lineReq : request.lines()) {
@@ -125,6 +129,15 @@ public class OrderService {
 
     private Order require(Long id) {
         return orders.findById(id).orElseThrow(() -> new NotFoundException("Order not found: " + id));
+    }
+
+    /** The signed-in staff member's username, or null when created without auth (e.g. tests). */
+    private static String currentUsername() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || auth instanceof AnonymousAuthenticationToken) {
+            return null;
+        }
+        return auth.getName();
     }
 
     /**
