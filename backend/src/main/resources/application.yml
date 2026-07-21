@@ -6,8 +6,10 @@ spring:
 ember:
   tax-rate: 0.085          # 8.5% sales tax on the subtotal
   meal-upcharge: 3.50      # flat upcharge to make an eligible item a meal
-  allowed-origins:         # the three station front-ends
-    - http://localhost:5173
+  allowed-origins:         # the three station front-ends (Vite dev ports)
+    - http://localhost:5173  # POS
+    - http://localhost:5174  # Kitchen
+    - http://localhost:5175  # Board
     - http://localhost:3000
 
 ---

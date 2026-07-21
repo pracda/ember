@@ -1,11 +1,150 @@
-// Phase 0 placeholder — an empty, styled page proving the shared Tailwind preset
-// is wired in. The real Ember Kitchen UI lands in a later phase.
+// Ember Kitchen Display — the rail of active tickets on an always-on dark monitor
+// (EMBER-SPEC §7.3). Seeds from REST, stays live over the order stream, and heals
+// on reconnect. Cooks advance tickets; a bumped ticket leaves the rail by event.
+import { useEffect, useState, type ReactNode } from 'react';
+import {
+  ApiError,
+  api,
+  useActiveOrders,
+  useOrderStore,
+  useOrderStream,
+  type Order,
+} from '@ember/shared';
+import { TicketCard } from './components/TicketCard';
+import { useNow } from './lib/useNow';
+
 export default function App() {
+  const connection = useOrderStream({ syncStore: true });
+  const orders = useActiveOrders();
+  const now = useNow(1000);
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState<Set<number>>(new Set());
+  const [lastReadied, setLastReadied] = useState<{ id: number; ticket: number } | null>(null);
+
+  // Initial rail load (loading / error control); the stream keeps it live afterwards.
+  const load = () => {
+    setError(null);
+    api
+      .getActiveOrders()
+      .then(useOrderStore.getState().seed)
+      .then(() => setLoading(false))
+      .catch(() => {
+        setLoading(false);
+        setError('Could not load the rail.');
+      });
+  };
+  useEffect(load, []);
+
+  const withBusy = (id: number, on: boolean) =>
+    setBusy((prev) => {
+      const next = new Set(prev);
+      if (on) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+
+  const advance = async (order: Order) => {
+    if (busy.has(order.id)) return;
+    withBusy(order.id, true);
+    try {
+      const updated = await api.advance(order.id);
+      if (updated.status === 'READY') {
+        setLastReadied({ id: updated.id, ticket: updated.ticketNumber });
+      }
+    } catch (e) {
+      // 409 = someone else already advanced it; the store reconciles from the event.
+      if (!(e instanceof ApiError && e.status === 409)) {
+        setError('Action failed — please retry.');
+      }
+    } finally {
+      withBusy(order.id, false);
+    }
+  };
+
+  const recallLast = async () => {
+    if (!lastReadied) return;
+    try {
+      await api.recall(lastReadied.id);
+    } catch {
+      /* already moved on; ignore */
+    } finally {
+      setLastReadied(null);
+    }
+  };
+
   return (
-    <main className="min-h-screen bg-char text-bone font-body grid place-items-center">
-      <h1 className="font-display text-5xl tracking-wide bg-ember-gradient bg-clip-text text-transparent">
-        Ember Kitchen
-      </h1>
-    </main>
+    <div className="flex h-screen flex-col bg-char text-bone font-body">
+      <header className="flex items-center justify-between border-b border-steel px-6 py-3">
+        <div className="flex items-baseline gap-3">
+          <h1 className="font-display text-3xl tracking-wide text-bone">Ember Kitchen</h1>
+          <span className="font-mono text-sm text-muted">{orders.length} active</span>
+        </div>
+        <div className="flex items-center gap-4">
+          {lastReadied && (
+            <button
+              onClick={recallLast}
+              className="min-h-9 rounded-full border border-steel2 px-4 text-sm text-bone/80 hover:bg-steel2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-bone"
+            >
+              Recall #{lastReadied.ticket}
+            </button>
+          )}
+          <ConnectionPill status={connection} />
+        </div>
+      </header>
+
+      <main className="flex-1 overflow-y-auto p-4">
+        {error && (
+          <p role="alert" className="mb-4 rounded-lg bg-late/15 px-4 py-2 text-late">
+            {error}
+          </p>
+        )}
+
+        {loading ? (
+          <Centered>
+            <span className="animate-pulse font-display text-3xl text-muted">Loading rail…</span>
+          </Centered>
+        ) : orders.length === 0 ? (
+          <Centered>
+            <div className="text-center">
+              <p className="font-display text-4xl text-fresh">All caught up</p>
+              <p className="mt-1 text-muted">No active tickets.</p>
+            </div>
+          </Centered>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+            {orders.map((order) => (
+              <TicketCard
+                key={order.id}
+                order={order}
+                now={now}
+                busy={busy.has(order.id)}
+                onAdvance={advance}
+              />
+            ))}
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
+
+function Centered({ children }: { children: ReactNode }) {
+  return <div className="grid h-full place-items-center">{children}</div>;
+}
+
+function ConnectionPill({ status }: { status: 'connecting' | 'connected' | 'disconnected' }) {
+  const map = {
+    connected: { color: '#2FCB86', label: 'Live' },
+    connecting: { color: '#FFB020', label: 'Connecting…' },
+    disconnected: { color: '#FF463B', label: 'Reconnecting…' },
+  } as const;
+  const { color, label } = map[status];
+  return (
+    <span className="flex items-center gap-2 text-sm text-muted">
+      <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: color }} />
+      {label}
+    </span>
   );
 }
