@@ -7,16 +7,22 @@ import java.util.Set;
  * client can move an order into an illegal state.
  *
  * <pre>
- *   NEW ──start──▶ PREP ──ready──▶ READY ──collect──▶ DONE
+ *   NEW ──start──▶ PREP ──ready──▶ READY ──collect──▶ DONE ──refund──▶ REFUNDED
  *                   ▲                 │
  *                   └─────recall──────┘
+ *
+ *   NEW / PREP / READY ──void──▶ VOIDED  (cancel before completion)
  * </pre>
  */
 public enum OrderStatus {
     NEW,
     PREP,
     READY,
-    DONE;
+    DONE,
+    /** Cancelled before completion — excluded from sales. */
+    VOIDED,
+    /** A completed order whose money was returned — excluded from net sales. */
+    REFUNDED;
 
     private static final Set<OrderStatus> ACTIVE = Set.of(NEW, PREP);
 

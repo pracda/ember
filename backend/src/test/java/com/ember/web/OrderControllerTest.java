@@ -59,7 +59,7 @@ class OrderControllerTest {
         return new OrderResponse(
                 1L, 1, OrderType.DINE_IN, OrderStatus.NEW, List.of(line),
                 new BigDecimal("6.50"), new BigDecimal("0.55"), new BigDecimal("7.05"),
-                Instant.now(), null, null, null);
+                Instant.now(), null, null, null, null);
     }
 
     @Test

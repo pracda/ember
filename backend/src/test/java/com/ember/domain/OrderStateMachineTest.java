@@ -106,4 +106,34 @@ class OrderStateMachineTest {
         Order done = at(OrderStatus.DONE);
         assertThatThrownBy(done::collect).isInstanceOf(InvalidTransitionException.class);
     }
+
+    /* ---------- void / refund ---------- */
+
+    @Test
+    void voidCancelsAnActiveOrder() {
+        Order o = at(OrderStatus.PREP);
+        o.voidOrder();
+        assertThat(o.getStatus()).isEqualTo(OrderStatus.VOIDED);
+        assertThat(o.getResolvedAt()).isNotNull();
+    }
+
+    @Test
+    void cannotVoidACompletedOrder() {
+        assertThatThrownBy(() -> at(OrderStatus.DONE).voidOrder())
+                .isInstanceOf(InvalidTransitionException.class);
+    }
+
+    @Test
+    void refundReversesACompletedOrder() {
+        Order o = at(OrderStatus.DONE);
+        o.refund();
+        assertThat(o.getStatus()).isEqualTo(OrderStatus.REFUNDED);
+        assertThat(o.getResolvedAt()).isNotNull();
+    }
+
+    @Test
+    void cannotRefundAnActiveOrder() {
+        assertThatThrownBy(() -> at(OrderStatus.READY).refund())
+                .isInstanceOf(InvalidTransitionException.class);
+    }
 }

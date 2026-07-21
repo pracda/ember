@@ -3,6 +3,7 @@ package com.ember.web;
 import com.ember.service.OrderService;
 import com.ember.web.dto.CreateOrderRequest;
 import com.ember.web.dto.OrderResponse;
+import com.ember.web.dto.ReasonRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -73,5 +74,19 @@ public class OrderController {
     @PostMapping("/{id}/collect")
     public OrderResponse collect(@PathVariable Long id) {
         return orders.collect(id);
+    }
+
+    /** Cancel an active order (NEW/PREP/READY → VOIDED). Any staff. */
+    @PostMapping("/{id}/void")
+    public OrderResponse voidOrder(@PathVariable Long id,
+                                   @Valid @RequestBody(required = false) ReasonRequest body) {
+        return orders.voidOrder(id, body == null ? null : body.reason());
+    }
+
+    /** Refund a completed order (DONE → REFUNDED). Manager only. */
+    @PostMapping("/{id}/refund")
+    public OrderResponse refund(@PathVariable Long id,
+                                @Valid @RequestBody(required = false) ReasonRequest body) {
+        return orders.refund(id, body == null ? null : body.reason());
     }
 }

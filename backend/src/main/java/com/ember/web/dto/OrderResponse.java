@@ -19,7 +19,8 @@ public record OrderResponse(
         Instant createdAt,
         Instant startedAt,
         Instant readyAt,
-        Instant collectedAt
+        Instant collectedAt,
+        String reason
 ) {
     public record OrderLineResponse(
             Long id,

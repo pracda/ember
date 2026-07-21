@@ -12,6 +12,8 @@ public record OrderEvent(Type type, OrderResponse order) {
         ORDER_STARTED,
         ORDER_READY,
         ORDER_RECALLED,
-        ORDER_COLLECTED
+        ORDER_COLLECTED,
+        ORDER_VOIDED,
+        ORDER_REFUNDED
     }
 }

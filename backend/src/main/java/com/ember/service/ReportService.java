@@ -53,12 +53,13 @@ public class ReportService {
     @Transactional(readOnly = true)
     public DaySummaryResponse daySummary(LocalDate date) {
         List<Order> dayOrders = ordersOn(date, date);
+        List<Order> net = netSales(dayOrders);
 
-        BigDecimal revenue = revenueOf(dayOrders);
+        BigDecimal revenue = revenueOf(net);
         int collected = (int) dayOrders.stream().filter(o -> o.getStatus() == OrderStatus.DONE).count();
         Long avgPrep = averagePrepSeconds(dayOrders);
 
-        return new DaySummaryResponse(date, dayOrders.size(), collected, revenue, avgPrep);
+        return new DaySummaryResponse(date, net.size(), collected, revenue, avgPrep);
     }
 
     @Transactional(readOnly = true)
@@ -66,20 +67,34 @@ public class ReportService {
         ZoneId zone = props.getTimezone();
         List<Order> range = ordersOn(from, to);
 
-        int orderCount = range.size();
-        BigDecimal revenue = revenueOf(range);
+        // Voided orders never happened; refunded orders' money was returned — both
+        // drop out of the net-sales figures, but are reported as their own counts.
+        List<Order> net = netSales(range);
+        long voided = range.stream().filter(o -> o.getStatus() == OrderStatus.VOIDED).count();
+        List<Order> refunded = range.stream().filter(o -> o.getStatus() == OrderStatus.REFUNDED).toList();
+
+        int orderCount = net.size();
+        BigDecimal revenue = revenueOf(net);
         BigDecimal avg = orderCount == 0
                 ? BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP)
                 : revenue.divide(BigDecimal.valueOf(orderCount), 2, RoundingMode.HALF_UP);
 
         return new AnalyticsResponse(
                 from, to, orderCount, revenue, avg,
-                salesByDay(range, from, to, zone),
-                topItems(range),
-                byCategory(range),
-                byOrderType(range),
-                byHour(range, zone),
-                byStaff(range));
+                (int) voided, refunded.size(), revenueOf(refunded),
+                salesByDay(net, from, to, zone),
+                topItems(net),
+                byCategory(net),
+                byOrderType(net),
+                byHour(net, zone),
+                byStaff(net));
+    }
+
+    /** Orders that count as sales — everything except VOIDED and REFUNDED. */
+    private static List<Order> netSales(List<Order> list) {
+        return list.stream()
+                .filter(o -> o.getStatus() != OrderStatus.VOIDED && o.getStatus() != OrderStatus.REFUNDED)
+                .toList();
     }
 
     /* ----- aggregations ----- */

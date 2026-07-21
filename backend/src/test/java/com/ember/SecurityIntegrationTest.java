@@ -127,6 +127,34 @@ class SecurityIntegrationTest {
         assertThat(get("/api/staff", login("manager", "manager123")).getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
+    @SuppressWarnings("unchecked")
+    private long createOrderAs(String token) {
+        var headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(token);
+        ResponseEntity<Map> resp = rest.postForEntity(
+                "/api/orders", new HttpEntity<>(ORDER, headers), Map.class);
+        return ((Number) resp.getBody().get("id")).longValue();
+    }
+
+    @Test
+    void voidNeedsStaffAndRefundNeedsManager() {
+        String cashier = login("cashier", "cashier123");
+        long id = createOrderAs(cashier);
+
+        // void: any staff, but not anonymous
+        assertThat(post("/api/orders/" + id + "/void", "{}", null).getStatusCode())
+                .isEqualTo(HttpStatus.UNAUTHORIZED);
+        assertThat(post("/api/orders/" + id + "/void", "{\"reason\":\"mis-ring\"}", cashier).getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+
+        // refund: manager only (authorization denies a cashier before the handler)
+        assertThat(post("/api/orders/" + id + "/refund", "{}", cashier).getStatusCode())
+                .isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(post("/api/orders/" + id + "/refund", "{}", null).getStatusCode())
+                .isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
     @Test
     void badCredentialsAreRejected() {
         var headers = new HttpHeaders();

@@ -74,6 +74,17 @@ public class Order {
     @Column(name = "served_by")
     private String servedBy;
 
+    /** Reason a VOIDED/REFUNDED order was reversed (audit + voids report). */
+    @Column(length = 255)
+    private String reason;
+
+    /** When the order was voided/refunded, and by whom. */
+    @Column(name = "resolved_at")
+    private Instant resolvedAt;
+
+    @Column(name = "resolved_by")
+    private String resolvedBy;
+
     protected Order() { }
 
     public Order(int ticketNumber, OrderType type) {
@@ -115,6 +126,24 @@ public class Order {
         collectedAt = Instant.now();
     }
 
+    /** Cancel an order before completion (NEW/PREP/READY → VOIDED). */
+    public void voidOrder() {
+        if (status != OrderStatus.NEW && status != OrderStatus.PREP && status != OrderStatus.READY) {
+            throw new InvalidTransitionException(id, status, "void");
+        }
+        status = OrderStatus.VOIDED;
+        resolvedAt = Instant.now();
+    }
+
+    /** Return the money on a completed order (DONE → REFUNDED). */
+    public void refund() {
+        if (status != OrderStatus.DONE) {
+            throw new InvalidTransitionException(id, status, "refund");
+        }
+        status = OrderStatus.REFUNDED;
+        resolvedAt = Instant.now();
+    }
+
     public void addLine(OrderLine line) {
         lines.add(line);
     }
@@ -149,4 +178,12 @@ public class Order {
 
     public String getServedBy() { return servedBy; }
     public void setServedBy(String servedBy) { this.servedBy = servedBy; }
+
+    public String getReason() { return reason; }
+    public void setReason(String reason) { this.reason = reason; }
+
+    public Instant getResolvedAt() { return resolvedAt; }
+
+    public String getResolvedBy() { return resolvedBy; }
+    public void setResolvedBy(String resolvedBy) { this.resolvedBy = resolvedBy; }
 }

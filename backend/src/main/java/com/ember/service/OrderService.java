@@ -105,6 +105,24 @@ public class OrderService {
         return publish(order, OrderEvent.Type.ORDER_COLLECTED);
     }
 
+    @Transactional
+    public OrderResponse voidOrder(Long id, String reason) {
+        Order order = require(id);
+        order.voidOrder();
+        order.setReason(reason);
+        order.setResolvedBy(currentUsername());
+        return publish(order, OrderEvent.Type.ORDER_VOIDED);
+    }
+
+    @Transactional
+    public OrderResponse refund(Long id, String reason) {
+        Order order = require(id);
+        order.refund();
+        order.setReason(reason);
+        order.setResolvedBy(currentUsername());
+        return publish(order, OrderEvent.Type.ORDER_REFUNDED);
+    }
+
     @Transactional(readOnly = true)
     public List<OrderResponse> listActive() {
         return orders.findByStatusInOrderByCreatedAtAsc(List.of(OrderStatus.NEW, OrderStatus.PREP))

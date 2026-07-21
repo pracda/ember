@@ -78,6 +78,33 @@ class ReportServiceTest {
     }
 
     @Test
+    void voidedAndRefundedExcludedFromNetSales() {
+        persistOrder(OrderType.DINE_IN, "10.00", "cashier", line("b1", "Ember Smash", 1, "10.00"));
+
+        Order voided = new Order(ticket++, OrderType.DINE_IN);
+        voided.setTotal(new BigDecimal("5.00"));
+        voided.voidOrder();
+        orders.saveAndFlush(voided);
+
+        Order refunded = new Order(ticket++, OrderType.DINE_IN);
+        refunded.setTotal(new BigDecimal("8.00"));
+        refunded.advance();
+        refunded.advance();
+        refunded.collect();
+        refunded.refund();
+        orders.saveAndFlush(refunded);
+
+        LocalDate today = LocalDate.now(ZoneId.of("UTC"));
+        var a = service().analytics(today, today);
+
+        assertThat(a.orderCount()).isEqualTo(1);
+        assertThat(a.revenue()).isEqualByComparingTo("10.00");
+        assertThat(a.voidedCount()).isEqualTo(1);
+        assertThat(a.refundedCount()).isEqualTo(1);
+        assertThat(a.refundedAmount()).isEqualByComparingTo("8.00");
+    }
+
+    @Test
     void emptyDayIsZeroed() {
         persist("10.00", false);
 

@@ -19,7 +19,7 @@ public final class Mappers {
         return new OrderResponse(
                 o.getId(), o.getTicketNumber(), o.getType(), o.getStatus(), lines,
                 o.getSubtotal(), o.getTax(), o.getTotal(),
-                o.getCreatedAt(), o.getStartedAt(), o.getReadyAt(), o.getCollectedAt());
+                o.getCreatedAt(), o.getStartedAt(), o.getReadyAt(), o.getCollectedAt(), o.getReason());
     }
 
     public static OrderResponse.OrderLineResponse toLine(OrderLine l) {
