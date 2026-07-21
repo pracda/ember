@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useAuth } from '@ember/shared';
 import { Login } from './components/Login';
 import { MenuEditor } from './components/MenuEditor';
-import { DaySummary } from './components/DaySummary';
+import { Analytics } from './components/Analytics';
 import { Employees } from './components/Employees';
 
 type Tab = 'menu' | 'report' | 'staff';
@@ -39,7 +39,7 @@ function Admin({ username, onLogout }: { username: string; onLogout: () => void 
   const [tab, setTab] = useState<Tab>('menu');
 
   const body =
-    tab === 'menu' ? <MenuEditor /> : tab === 'report' ? <DaySummary /> : <Employees currentUsername={username} />;
+    tab === 'menu' ? <MenuEditor /> : tab === 'report' ? <Analytics /> : <Employees currentUsername={username} />;
 
   return (
     <div className="min-h-screen bg-char text-bone font-body">

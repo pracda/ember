@@ -6,4 +6,7 @@
   .input {
     @apply w-full rounded-lg border border-steel bg-char px-3 py-2 text-bone focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ember;
   }
+  .preset {
+    @apply min-h-9 rounded-full border border-steel2 px-3 text-sm text-bone/80 hover:bg-steel2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ember;
+  }
 }

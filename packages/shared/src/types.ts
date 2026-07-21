@@ -152,3 +152,18 @@ export interface DaySummary {
   revenue: number;
   avgPrepSeconds: number | null;
 }
+
+/** Date-range analytics for the manager dashboard (mirrors AnalyticsResponse). */
+export interface Analytics {
+  from: string;
+  to: string;
+  orderCount: number;
+  revenue: number;
+  avgOrderValue: number;
+  salesByDay: { date: string; orderCount: number; revenue: number }[];
+  topItems: { menuItemId: string; itemName: string; quantity: number; revenue: number }[];
+  byCategory: { category: string; quantity: number; revenue: number }[];
+  byOrderType: { type: OrderType; orderCount: number; revenue: number }[];
+  byHour: { hour: number; orderCount: number }[];
+  byStaff: { username: string | null; displayName: string; orderCount: number; revenue: number }[];
+}

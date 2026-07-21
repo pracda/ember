@@ -8,6 +8,7 @@
  */
 import { getToken, setSession } from './auth';
 import type {
+  Analytics,
   AuthSession,
   CreateOrderRequest,
   DaySummary,
@@ -110,6 +111,8 @@ export const api = {
   // reporting (MANAGER)
   getDaySummary: (date?: string) =>
     request<DaySummary>(`/api/reports/day-summary${date ? `?date=${date}` : ''}`),
+  getAnalytics: (from: string, to: string) =>
+    request<Analytics>(`/api/reports/analytics?from=${from}&to=${to}`),
 
   // employees (MANAGER)
   getStaff: () => request<Staff[]>('/api/staff'),
