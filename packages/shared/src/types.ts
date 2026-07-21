@@ -7,7 +7,7 @@
  * ISO-8601 strings (Java Instant, UTC) and render local in the UI.
  */
 
-export type OrderStatus = 'NEW' | 'PREP' | 'READY' | 'DONE';
+export type OrderStatus = 'NEW' | 'PREP' | 'READY' | 'DONE' | 'VOIDED' | 'REFUNDED';
 export type OrderType = 'DINE_IN' | 'TO_GO';
 
 export type OrderEventType =
@@ -15,7 +15,9 @@ export type OrderEventType =
   | 'ORDER_STARTED'
   | 'ORDER_READY'
   | 'ORDER_RECALLED'
-  | 'ORDER_COLLECTED';
+  | 'ORDER_COLLECTED'
+  | 'ORDER_VOIDED'
+  | 'ORDER_REFUNDED';
 
 /** A selectable option on a menu item — a size or an add-on — with its price delta. */
 export interface PriceModifier {
@@ -62,6 +64,8 @@ export interface Order {
   startedAt: string | null;
   readyAt: string | null;
   collectedAt: string | null;
+  /** Void/refund reason, when the order was reversed. */
+  reason: string | null;
 }
 
 /** Envelope broadcast on /topic/orders. */
@@ -160,6 +164,9 @@ export interface Analytics {
   orderCount: number;
   revenue: number;
   avgOrderValue: number;
+  voidedCount: number;
+  refundedCount: number;
+  refundedAmount: number;
   salesByDay: { date: string; orderCount: number; revenue: number }[];
   topItems: { menuItemId: string; itemName: string; quantity: number; revenue: number }[];
   byCategory: { category: string; quantity: number; revenue: number }[];

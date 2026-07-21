@@ -96,9 +96,14 @@ export const api = {
   getReadyOrders: () => request<Order[]>('/api/orders?status=ready'),
   createOrder: (req: CreateOrderRequest) =>
     request<Order>('/api/orders', { method: 'POST', body: JSON.stringify(req) }),
+  getAllOrders: () => request<Order[]>('/api/orders?status=all'),
   advance: (id: number) => request<Order>(`/api/orders/${id}/advance`, { method: 'POST' }),
   recall: (id: number) => request<Order>(`/api/orders/${id}/recall`, { method: 'POST' }),
   collect: (id: number) => request<Order>(`/api/orders/${id}/collect`, { method: 'POST' }),
+  voidOrder: (id: number, reason?: string) =>
+    request<Order>(`/api/orders/${id}/void`, { method: 'POST', body: JSON.stringify({ reason }) }),
+  refundOrder: (id: number, reason?: string) =>
+    request<Order>(`/api/orders/${id}/refund`, { method: 'POST', body: JSON.stringify({ reason }) }),
 
   // menu admin (MANAGER)
   createMenuItem: (item: MenuItemInput) =>

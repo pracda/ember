@@ -21,6 +21,7 @@ function order(id: number, status: OrderStatus, createdAt: string, readyAt: stri
     startedAt: null,
     readyAt,
     collectedAt: null,
+    reason: null,
   };
 }
 

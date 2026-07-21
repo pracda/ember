@@ -6,8 +6,9 @@ import { Login } from './components/Login';
 import { MenuEditor } from './components/MenuEditor';
 import { Analytics } from './components/Analytics';
 import { Employees } from './components/Employees';
+import { Orders } from './components/Orders';
 
-type Tab = 'menu' | 'report' | 'staff';
+type Tab = 'menu' | 'orders' | 'report' | 'staff';
 
 export default function App() {
   const { session, login, logout } = useAuth();
@@ -39,7 +40,15 @@ function Admin({ username, onLogout }: { username: string; onLogout: () => void 
   const [tab, setTab] = useState<Tab>('menu');
 
   const body =
-    tab === 'menu' ? <MenuEditor /> : tab === 'report' ? <Analytics /> : <Employees currentUsername={username} />;
+    tab === 'menu' ? (
+      <MenuEditor />
+    ) : tab === 'orders' ? (
+      <Orders />
+    ) : tab === 'report' ? (
+      <Analytics />
+    ) : (
+      <Employees currentUsername={username} />
+    );
 
   return (
     <div className="min-h-screen bg-char text-bone font-body">
@@ -50,6 +59,7 @@ function Admin({ username, onLogout }: { username: string; onLogout: () => void 
           </h1>
           <nav className="flex gap-2">
             <TabButton active={tab === 'menu'} onClick={() => setTab('menu')}>Menu</TabButton>
+            <TabButton active={tab === 'orders'} onClick={() => setTab('orders')}>Orders</TabButton>
             <TabButton active={tab === 'staff'} onClick={() => setTab('staff')}>Employees</TabButton>
             <TabButton active={tab === 'report'} onClick={() => setTab('report')}>Reports</TabButton>
           </nav>

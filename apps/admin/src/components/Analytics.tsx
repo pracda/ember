@@ -57,6 +57,14 @@ export function Analytics() {
             <Kpi label="Revenue" value={money(data.revenue)} />
             <Kpi label="Avg order value" value={money(data.avgOrderValue)} />
           </div>
+          {(data.voidedCount > 0 || data.refundedCount > 0) && (
+            <p className="text-sm text-muted">
+              Excluded from net sales:{' '}
+              <span className="text-bone">{data.voidedCount}</span> voided ·{' '}
+              <span className="text-bone">{data.refundedCount}</span> refunded (
+              {money(data.refundedAmount)})
+            </p>
+          )}
 
           <Card title="Revenue over time">
             <LineChart points={data.salesByDay.map((d) => ({ label: d.date.slice(5), value: d.revenue }))} />
