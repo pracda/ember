@@ -179,8 +179,9 @@ Request:
 → `201` `Order` (with `ticketNumber`, per-line `unitPrice`, `subtotal`/`tax`/`total`).
 Errors: `404` unknown `itemId`; `400` size/add-on not offered by the item, or validation failure.
 
-### `GET /api/orders?status=active|all`
+### `GET /api/orders?status=active|ready|all`
 - `active` (default): `NEW`+`PREP`, oldest first — the kitchen rail.
+- `ready`: `READY`, newest `readyAt` first — the pickup board's ready calls.
 - `all`: history, newest first.
 → `200` `Order[]`
 

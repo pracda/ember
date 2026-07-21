@@ -57,6 +57,17 @@ class OrderRepositoryTest {
     }
 
     @Test
+    void readyIsNewestReadyAtFirst() {
+        persist(1, OrderStatus.READY);
+        persist(2, OrderStatus.READY);
+        persist(3, OrderStatus.READY);
+
+        List<Order> ready = orders.findByStatusOrderByReadyAtDesc(OrderStatus.READY);
+
+        assertThat(ready).extracting(Order::getTicketNumber).containsExactly(3, 2, 1);
+    }
+
+    @Test
     void historyIsNewestFirst() {
         persist(1, OrderStatus.NEW);
         persist(2, OrderStatus.NEW);

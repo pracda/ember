@@ -17,15 +17,23 @@ export interface UseOrderStreamOptions {
   onEvent?: (order: Order, type: OrderEventType) => void;
   /** Keep the shared order store in sync (seed on connect, upsert on event). Default true. */
   syncStore?: boolean;
+  /**
+   * What to fetch and seed on every (re)connect. Defaults to the active rail
+   * (NEW+PREP). The pickup board overrides this to also include READY, so a
+   * reload rebuilds its Ready zone too.
+   */
+  seedOnConnect?: () => Promise<Order[]>;
 }
 
 export function useOrderStream(options: UseOrderStreamOptions = {}): ConnectionStatus {
   const { syncStore = true } = options;
   const [status, setStatus] = useState<ConnectionStatus>('connecting');
 
-  // Keep the latest onEvent without re-opening the socket each render.
+  // Keep the latest callbacks without re-opening the socket each render.
   const onEventRef = useRef(options.onEvent);
   onEventRef.current = options.onEvent;
+  const seedFnRef = useRef(options.seedOnConnect);
+  seedFnRef.current = options.seedOnConnect;
 
   useEffect(() => {
     const { upsert, seed } = useOrderStore.getState();
@@ -44,7 +52,7 @@ export function useOrderStream(options: UseOrderStreamOptions = {}): ConnectionS
         });
         // Heal any events missed while disconnected.
         if (syncStore) {
-          api.getActiveOrders().then(seed).catch(() => undefined);
+          (seedFnRef.current ?? api.getActiveOrders)().then(seed).catch(() => undefined);
         }
       },
       onWebSocketClose: () => setStatus('disconnected'),

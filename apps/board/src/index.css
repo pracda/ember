@@ -1,3 +1,16 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* New-ready pop — gated behind motion-safe at the call site. */
+@keyframes pop {
+  0% {
+    transform: scale(1);
+  }
+  30% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
+}

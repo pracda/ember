@@ -108,6 +108,12 @@ public class OrderService {
     }
 
     @Transactional(readOnly = true)
+    public List<OrderResponse> listReady() {
+        return orders.findByStatusOrderByReadyAtDesc(OrderStatus.READY)
+                .stream().map(Mappers::toOrder).toList();
+    }
+
+    @Transactional(readOnly = true)
     public List<OrderResponse> listAll() {
         return orders.findAllByOrderByCreatedAtDesc().stream().map(Mappers::toOrder).toList();
     }

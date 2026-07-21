@@ -100,4 +100,13 @@ class OrderControllerTest {
                 .andExpect(jsonPath("$[0].id").value(1))
                 .andExpect(jsonPath("$[0].status").value("NEW"));
     }
+
+    @Test
+    void readyStatusReturnsReadyList() throws Exception {
+        when(orders.listReady()).thenReturn(List.of(sample()));
+
+        mvc.perform(get("/api/orders").param("status", "ready"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(1));
+    }
 }

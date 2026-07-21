@@ -38,10 +38,18 @@ public class OrderController {
         return orders.create(request);
     }
 
-    /** List orders. {@code ?status=active} (default) returns the kitchen rail; {@code all} returns history. */
+    /**
+     * List orders. {@code ?status=active} (default) returns the kitchen rail (NEW+PREP,
+     * oldest first); {@code ready} returns the pickup board's ready calls (READY, newest
+     * first); {@code all} returns history (newest first).
+     */
     @GetMapping
     public List<OrderResponse> list(@RequestParam(defaultValue = "active") String status) {
-        return "all".equalsIgnoreCase(status) ? orders.listAll() : orders.listActive();
+        return switch (status.toLowerCase()) {
+            case "all" -> orders.listAll();
+            case "ready" -> orders.listReady();
+            default -> orders.listActive();
+        };
     }
 
     @GetMapping("/{id}")

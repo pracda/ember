@@ -51,6 +51,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 export const api = {
   getMenu: () => request<MenuItem[]>('/api/menu'),
   getActiveOrders: () => request<Order[]>('/api/orders?status=active'),
+  getReadyOrders: () => request<Order[]>('/api/orders?status=ready'),
   createOrder: (req: CreateOrderRequest) =>
     request<Order>('/api/orders', { method: 'POST', body: JSON.stringify(req) }),
   advance: (id: number) => request<Order>(`/api/orders/${id}/advance`, { method: 'POST' }),

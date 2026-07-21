@@ -14,6 +14,9 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     List<Order> findByStatusOrderByCreatedAtAsc(OrderStatus status);
 
+    /** Ready tickets for the pickup board, newest call first. */
+    List<Order> findByStatusOrderByReadyAtDesc(OrderStatus status);
+
     List<Order> findAllByOrderByCreatedAtDesc();
 
     /** Highest ticket number issued so far, used to seed the ticket sequence on start-up. */
