@@ -1,104 +1,188 @@
-// Phase 2 acceptance harness (throwaway — Phase 3 replaces it with the real POS).
-// Proves the shared package end to end: fetch the menu, create an order via api.ts,
-// and receive the matching ORDER_CREATED through useOrderStream.
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+// Ember POS — cashier builds an order and sends it to the kitchen (EMBER-SPEC §7.2).
+// The server owns pricing and ticket numbers; this app sends only item ids + choices.
+import { useEffect, useMemo, useState } from 'react';
 import {
+  ApiError,
   api,
-  apiBase,
-  money,
   useOrderStream,
   type MenuItem,
-  type Order,
-  type OrderEventType,
+  type OrderType,
 } from '@ember/shared';
-
-interface Seen {
-  type: OrderEventType;
-  orderId: number;
-  ticket: number;
-}
+import { CategoryTabs, orderedCategories } from './components/CategoryTabs';
+import { MenuGrid } from './components/MenuGrid';
+import { CustomizeModal } from './components/CustomizeModal';
+import { TicketPanel } from './components/TicketPanel';
+import { Toast } from './components/Toast';
+import {
+  addLine,
+  needsCustomize,
+  removeLine,
+  setQuantity,
+  toCreateRequest,
+  type CartLine,
+  type LineChoices,
+} from './lib/cart';
 
 export default function App() {
   const [menu, setMenu] = useState<MenuItem[] | null>(null);
-  const [created, setCreated] = useState<Order | null>(null);
-  const [events, setEvents] = useState<Seen[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const createdOnce = useRef(false);
+  const [menuError, setMenuError] = useState<string | null>(null);
+  const [category, setCategory] = useState<string>('');
+  const [cart, setCart] = useState<CartLine[]>([]);
+  const [orderType, setOrderType] = useState<OrderType>('DINE_IN');
+  const [customizing, setCustomizing] = useState<MenuItem | null>(null);
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
+  const [toast, setToast] = useState<number | null>(null);
 
-  const status = useOrderStream({
-    onEvent: (order, type) =>
-      setEvents((prev) => [...prev, { type, orderId: order.id, ticket: order.ticketNumber }]),
-  });
+  // Keep a live socket so the cashier sees when the kitchen link drops.
+  const connection = useOrderStream({ syncStore: false });
 
-  // 1. Fetch the menu on mount.
-  useEffect(() => {
-    api.getMenu().then(setMenu).catch((e) => setError(String(e)));
-  }, []);
-
-  // 2. Once the socket is live and the menu is in, create one order.
-  useEffect(() => {
-    if (status !== 'connected' || !menu || createdOnce.current) return;
-    createdOnce.current = true;
+  const loadMenu = () => {
+    setMenuError(null);
     api
-      .createOrder({
-        type: 'DINE_IN',
-        lines: [
-          { itemId: 'b1', quantity: 1, meal: true, addons: ['No onion', 'Extra cheese'], notes: 'well done' },
-          { itemId: 'd1', quantity: 1, size: 'Large' },
-        ],
+      .getMenu()
+      .then((items) => {
+        setMenu(items);
+        setCategory((current) => current || orderedCategories(items.map((i) => i.category))[0] || '');
       })
-      .then(setCreated)
-      .catch((e) => setError(String(e)));
-  }, [status, menu]);
+      .catch(() => setMenuError('Could not load the menu.'));
+  };
 
-  // 3. Did the matching ORDER_CREATED come back over the stream?
-  const matched =
-    created != null &&
-    events.some((e) => e.type === 'ORDER_CREATED' && e.orderId === created.id);
+  useEffect(loadMenu, []);
+
+  const categories = useMemo(
+    () => (menu ? orderedCategories(menu.map((i) => i.category)) : []),
+    [menu],
+  );
+  const items = useMemo(
+    () => (menu ? menu.filter((i) => i.category === category) : []),
+    [menu, category],
+  );
+
+  const pickItem = (item: MenuItem) => {
+    if (needsCustomize(item)) {
+      setCustomizing(item);
+    } else {
+      addToCart(item, { meal: false, addons: [] });
+    }
+  };
+
+  const addToCart = (item: MenuItem, choices: LineChoices) => {
+    setCart((lines) => addLine(lines, item, choices));
+    setSendError(null);
+  };
+
+  const send = async () => {
+    if (cart.length === 0 || sending) return;
+    setSending(true);
+    setSendError(null);
+    try {
+      const order = await api.createOrder(toCreateRequest(cart, orderType));
+      setToast(order.ticketNumber);
+      setCart([]);
+    } catch (e) {
+      setSendError(
+        e instanceof ApiError
+          ? e.message
+          : 'Could not reach the kitchen. Check the connection and try again.',
+      );
+    } finally {
+      setSending(false);
+    }
+  };
 
   return (
-    <main className="min-h-screen bg-bone text-ink font-body p-8">
-      <h1 className="font-display text-4xl bg-ember-gradient bg-clip-text text-transparent">
-        Ember · shared round-trip
-      </h1>
-      <p className="font-mono text-sm text-muted mt-1">API {apiBase}</p>
+    <div className="flex h-screen flex-col bg-bone text-ink font-body">
+      <header className="flex items-center justify-between border-b border-bone2 px-6 py-3">
+        <h1 className="font-display text-3xl tracking-wide bg-ember-gradient bg-clip-text text-transparent">
+          Ember POS
+        </h1>
+        <ConnectionPill status={connection} />
+      </header>
 
-      <div className="mt-6 grid gap-3 max-w-xl">
-        <Row label="WebSocket" ok={status === 'connected'}>
-          {status}
-        </Row>
-        <Row label="Menu (GET /api/menu)" ok={!!menu}>
-          {menu ? `${menu.length} items` : 'loading…'}
-        </Row>
-        <Row label="Created order (POST /api/orders)" ok={!!created}>
-          {created
-            ? `ticket #${created.ticketNumber} · total ${money(created.total)}`
-            : 'waiting…'}
-        </Row>
-        <Row label="ORDER_CREATED received (useOrderStream)" ok={matched}>
-          {matched ? `matched order ${created?.id}` : `${events.length} event(s) so far`}
-        </Row>
+      <div className="grid flex-1 grid-cols-1 overflow-hidden lg:grid-cols-[1fr_22rem]">
+        <main className="flex flex-col overflow-hidden p-4">
+          {menuError ? (
+            <ErrorState message={menuError} onRetry={loadMenu} />
+          ) : menu === null ? (
+            <LoadingState />
+          ) : (
+            <>
+              <CategoryTabs categories={categories} active={category} onSelect={setCategory} />
+              <div className="mt-4 flex-1 overflow-y-auto pb-4">
+                <MenuGrid items={items} onPick={pickItem} />
+              </div>
+            </>
+          )}
+        </main>
+
+        <TicketPanel
+          lines={cart}
+          orderType={orderType}
+          sending={sending}
+          error={sendError}
+          onOrderType={setOrderType}
+          onQuantity={(key, q) => setCart((lines) => setQuantity(lines, key, q))}
+          onRemove={(key) => setCart((lines) => removeLine(lines, key))}
+          onSend={send}
+          onClear={() => {
+            setCart([]);
+            setSendError(null);
+          }}
+        />
       </div>
 
-      {matched && (
-        <p data-testid="acceptance" className="mt-6 font-display text-2xl text-fresh">
-          ✓ Phase 2 acceptance PASSED
-        </p>
+      {customizing && (
+        <CustomizeModal
+          item={customizing}
+          onClose={() => setCustomizing(null)}
+          onAdd={(choices) => {
+            addToCart(customizing, choices);
+            setCustomizing(null);
+          }}
+        />
       )}
-      {error && <pre className="mt-6 text-late whitespace-pre-wrap">{error}</pre>}
-    </main>
+
+      {toast !== null && <Toast ticketNumber={toast} onDismiss={() => setToast(null)} />}
+    </div>
   );
 }
 
-function Row({ label, ok, children }: { label: string; ok: boolean; children: ReactNode }) {
+function ConnectionPill({ status }: { status: 'connecting' | 'connected' | 'disconnected' }) {
+  const map = {
+    connected: { color: '#2FCB86', label: 'Kitchen link live' },
+    connecting: { color: '#FFB020', label: 'Connecting…' },
+    disconnected: { color: '#FF463B', label: 'Reconnecting…' },
+  } as const;
+  const { color, label } = map[status];
   return (
-    <div className="flex items-center gap-3 bg-bone2 rounded-lg px-4 py-3">
-      <span
-        className="inline-block w-3 h-3 rounded-full"
-        style={{ background: ok ? '#2FCB86' : '#A99A8C' }}
-      />
-      <span className="font-semibold w-72">{label}</span>
-      <span className="font-mono text-sm">{children}</span>
+    <span className="flex items-center gap-2 text-sm text-muted">
+      <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: color }} />
+      {label}
+    </span>
+  );
+}
+
+function LoadingState() {
+  return (
+    <div className="grid flex-1 place-items-center text-muted">
+      <span className="animate-pulse font-display text-2xl">Loading menu…</span>
+    </div>
+  );
+}
+
+function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div className="grid flex-1 place-items-center">
+      <div className="text-center">
+        <p className="text-late">{message}</p>
+        <button
+          onClick={onRetry}
+          className="mt-3 min-h-11 rounded-2xl bg-ink px-6 font-semibold text-bone focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ember"
+        >
+          Retry
+        </button>
+      </div>
     </div>
   );
 }
