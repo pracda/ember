@@ -303,12 +303,16 @@ Primary action = linear-gradient(150deg, `ember`, `flame`) with near-black text 
 
 ## 9. Cross-cutting
 
-- **Auth:** JWT bearer (`POST /api/auth/login` → token; demo users cashier/cook/manager).
-  Roles: `CASHIER`, `COOK`, `MANAGER`. `POST /api/orders` → CASHIER/MANAGER;
-  `advance`/`recall` → COOK/MANAGER; menu writes + `/api/reports/**` → MANAGER.
+- **Auth:** JWT bearer over a DB-backed `staff` store (Phase 7). Two sign-ins:
+  `POST /api/auth/login` (username+password, admin) and `POST /api/auth/pin`
+  (`{staffId,pin}`, stations) after `GET /api/auth/roster`. Roles: `CASHIER`,
+  `COOK`, `MANAGER`. `POST /api/orders` → CASHIER/MANAGER; `advance`/`recall` →
+  COOK/MANAGER; menu writes, `/api/reports/**` and `/api/staff/**` → MANAGER.
   `GET /api/menu` and `GET /api/orders/**` stay public. **Decision (build):** the
-  pickup board is left customer-facing, so `POST /api/orders/{id}/collect` is public
-  (not staff-gated). The manager back-office lives in a separate `apps/admin`.
+  pickup board is left customer-facing, so `POST /api/orders/{id}/collect` is public.
+  Manager back-office (menu, reports, employees) is a separate `apps/admin`.
+  Seeded demo staff: manager (pw `manager123`, PIN 9999), cashier (PIN 1111),
+  cook (PIN 2222) — all also have passwords for convenience.
 - **Config:** `ember.tax-rate`, `ember.meal-upcharge`, `ember.allowed-origins` (env in prod).
 - **Validation:** Bean Validation on requests; `GlobalExceptionHandler` → ProblemDetail.
 - **Ticket numbers:** monotonic via `TicketSequence` seeded from DB max. Add optional

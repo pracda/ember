@@ -10,11 +10,8 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -57,7 +54,7 @@ public class SecurityConfig {
                         // re-secured, or the JWT filter (skipped on ERROR dispatch) turns them into 401.
                         .requestMatchers("/error").permitAll()
                         .requestMatchers("/ws/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+                        .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/menu", "/api/menu/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/orders", "/api/orders/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/orders/*/collect").permitAll()
@@ -66,6 +63,7 @@ public class SecurityConfig {
                         .hasAnyRole("COOK", "MANAGER")
                         .requestMatchers("/api/menu/**").hasRole("MANAGER")
                         .requestMatchers("/api/reports/**").hasRole("MANAGER")
+                        .requestMatchers("/api/staff/**").hasRole("MANAGER")
                         .anyRequest().authenticated())
                 .exceptionHandling(e -> e
                         // 401 when unauthenticated, 403 when authenticated but lacking the role.
@@ -95,17 +93,7 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    /**
-     * DEMO staff accounts — cashier/cashier123, cook/cook123, manager/manager123.
-     * Swap for a real user store (DB + admin) before production.
-     */
-    @Bean
-    UserDetailsService userDetailsService(PasswordEncoder encoder) {
-        return new InMemoryUserDetailsManager(
-                User.withUsername("cashier").password(encoder.encode("cashier123")).roles("CASHIER").build(),
-                User.withUsername("cook").password(encoder.encode("cook123")).roles("COOK").build(),
-                User.withUsername("manager").password(encoder.encode("manager123")).roles("MANAGER").build());
-    }
+    // Password sign-in is backed by the staff table via StaffUserDetailsService.
 
     @Bean
     AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {

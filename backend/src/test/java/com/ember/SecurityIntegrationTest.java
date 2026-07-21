@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -11,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -93,6 +95,36 @@ class SecurityIntegrationTest {
                 .isEqualTo(HttpStatus.FORBIDDEN);
         assertThat(get("/api/reports/day-summary", login("manager", "manager123")).getStatusCode())
                 .isEqualTo(HttpStatus.OK);
+    }
+
+    private Long rosterId(String displayName) {
+        ResponseEntity<List<Map<String, Object>>> roster = rest.exchange(
+                "/api/auth/roster", HttpMethod.GET, null, new ParameterizedTypeReference<>() { });
+        Map<String, Object> entry = roster.getBody().stream()
+                .filter(e -> displayName.equals(e.get("displayName")))
+                .findFirst().orElseThrow();
+        return ((Number) entry.get("id")).longValue();
+    }
+
+    @Test
+    void rosterIsPublic() {
+        assertThat(get("/api/auth/roster", null).getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
+    @Test
+    void stationPinLoginWorksAndWrongPinIsRejected() {
+        Long cashierId = rosterId("Cashier");
+        assertThat(post("/api/auth/pin", "{\"staffId\":" + cashierId + ",\"pin\":\"1111\"}", null).getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+        assertThat(post("/api/auth/pin", "{\"staffId\":" + cashierId + ",\"pin\":\"0000\"}", null).getStatusCode())
+                .isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void staffAdminIsManagerOnly() {
+        assertThat(get("/api/staff", null).getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        assertThat(get("/api/staff", login("cashier", "cashier123")).getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(get("/api/staff", login("manager", "manager123")).getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
     @Test

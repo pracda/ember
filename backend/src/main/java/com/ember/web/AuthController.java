@@ -1,43 +1,42 @@
 package com.ember.web;
 
-import com.ember.security.JwtService;
+import com.ember.service.AuthService;
 import com.ember.web.dto.LoginRequest;
 import com.ember.web.dto.LoginResponse;
+import com.ember.web.dto.PinLoginRequest;
+import com.ember.web.dto.RosterEntry;
 import jakarta.validation.Valid;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/** Exchanges staff credentials for a JWT. */
+import java.util.List;
+
+/** Sign-in endpoints (all public): password for admin, roster + PIN for stations. */
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    private final AuthenticationManager authManager;
-    private final JwtService jwt;
+    private final AuthService auth;
 
-    public AuthController(AuthenticationManager authManager, JwtService jwt) {
-        this.authManager = authManager;
-        this.jwt = jwt;
+    public AuthController(AuthService auth) {
+        this.auth = auth;
     }
 
     @PostMapping("/login")
     public LoginResponse login(@Valid @RequestBody LoginRequest request) {
-        Authentication auth = authManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.username(), request.password()));
+        return auth.passwordLogin(request.username(), request.password());
+    }
 
-        String role = auth.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .filter(a -> a.startsWith("ROLE_"))
-                .map(a -> a.substring("ROLE_".length()))
-                .findFirst()
-                .orElse("");
+    @GetMapping("/roster")
+    public List<RosterEntry> roster() {
+        return auth.roster();
+    }
 
-        return new LoginResponse(jwt.generate(auth.getName(), role), auth.getName(), role);
+    @PostMapping("/pin")
+    public LoginResponse pinLogin(@Valid @RequestBody PinLoginRequest request) {
+        return auth.pinLogin(request.staffId(), request.pin());
     }
 }
