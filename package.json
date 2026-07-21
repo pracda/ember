@@ -8,6 +8,7 @@
     "dev:pos": "pnpm --filter @ember/pos dev",
     "dev:kitchen": "pnpm --filter @ember/kitchen dev",
     "dev:board": "pnpm --filter @ember/board dev",
+    "dev:admin": "pnpm --filter @ember/admin dev",
     "build": "pnpm -r build",
     "lint": "pnpm -r --if-present lint",
     "test": "pnpm -r --if-present test"

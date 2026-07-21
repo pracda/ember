@@ -6,14 +6,44 @@ import {
   ApiError,
   api,
   useActiveOrders,
+  useAuth,
   useOrderStore,
   useOrderStream,
   type Order,
 } from '@ember/shared';
 import { TicketCard } from './components/TicketCard';
+import { Login } from './components/Login';
 import { useNow } from './lib/useNow';
 
+// Cooks (and managers) run the kitchen display; the backend enforces the role.
+const KITCHEN_ROLES = ['COOK', 'MANAGER'];
+
 export default function App() {
+  const { session, login, logout } = useAuth();
+  if (!session) {
+    return <Login onSubmit={login} hint="Demo: cook / cook123" />;
+  }
+  if (!KITCHEN_ROLES.includes(session.role)) {
+    return (
+      <main className="grid min-h-screen place-items-center bg-char text-bone font-body p-6">
+        <div className="text-center">
+          <p className="font-display text-3xl">This screen is for cooks</p>
+          <p className="mt-1 text-muted">Signed in as {session.username} ({session.role.toLowerCase()}).</p>
+          <button
+            onClick={logout}
+            className="mt-4 min-h-11 rounded-2xl bg-steel2 px-6 font-semibold text-bone focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ember"
+          >
+            Sign out
+          </button>
+        </div>
+      </main>
+    );
+  }
+  return <Kds />;
+}
+
+function Kds() {
+  const { session, logout } = useAuth();
   const connection = useOrderStream({ syncStore: true });
   const orders = useActiveOrders();
   const now = useNow(1000);
@@ -91,6 +121,13 @@ export default function App() {
             </button>
           )}
           <ConnectionPill status={connection} />
+          <span className="text-sm text-muted">{session?.username}</span>
+          <button
+            onClick={logout}
+            className="min-h-9 rounded-full border border-steel2 px-3 text-sm text-bone/70 hover:bg-steel2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ember"
+          >
+            Sign out
+          </button>
         </div>
       </header>
 

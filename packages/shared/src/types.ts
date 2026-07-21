@@ -85,3 +85,34 @@ export interface CreateOrderRequest {
   type: OrderType;
   lines: OrderLineRequest[];
 }
+
+/* ----- auth + admin (Phase 6) ----- */
+
+export type Role = 'CASHIER' | 'COOK' | 'MANAGER';
+
+/** A signed-in staff session (LoginResponse + the raw token). */
+export interface AuthSession {
+  token: string;
+  username: string;
+  role: Role;
+}
+
+/** Manager payload to create or update a menu item (mirrors MenuItemRequest). */
+export interface MenuItemInput {
+  id: string;
+  name: string;
+  category: string;
+  basePrice: number;
+  mealAvailable: boolean;
+  sizes: PriceModifier[];
+  addons: PriceModifier[];
+}
+
+/** Manager day-summary (mirrors DaySummaryResponse). */
+export interface DaySummary {
+  date: string;
+  orderCount: number;
+  collectedCount: number;
+  revenue: number;
+  avgPrepSeconds: number | null;
+}

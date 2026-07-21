@@ -4,10 +4,12 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   ApiError,
   api,
+  useAuth,
   useOrderStream,
   type MenuItem,
   type OrderType,
 } from '@ember/shared';
+import { Login } from './components/Login';
 import { CategoryTabs, orderedCategories } from './components/CategoryTabs';
 import { MenuGrid } from './components/MenuGrid';
 import { CustomizeModal } from './components/CustomizeModal';
@@ -23,7 +25,35 @@ import {
   type LineChoices,
 } from './lib/cart';
 
+// Cashiers (and managers) run the POS; the backend enforces the role on send.
+const POS_ROLES = ['CASHIER', 'MANAGER'];
+
 export default function App() {
+  const { session, login, logout } = useAuth();
+  if (!session) {
+    return <Login onSubmit={login} hint="Demo: cashier / cashier123" />;
+  }
+  if (!POS_ROLES.includes(session.role)) {
+    return (
+      <main className="grid min-h-screen place-items-center bg-bone text-ink font-body p-6">
+        <div className="text-center">
+          <p className="font-display text-3xl">This screen is for cashiers</p>
+          <p className="mt-1 text-muted">Signed in as {session.username} ({session.role.toLowerCase()}).</p>
+          <button
+            onClick={logout}
+            className="mt-4 min-h-11 rounded-2xl bg-ink px-6 font-semibold text-bone focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ember"
+          >
+            Sign out
+          </button>
+        </div>
+      </main>
+    );
+  }
+  return <Pos />;
+}
+
+function Pos() {
+  const { session, logout } = useAuth();
   const [menu, setMenu] = useState<MenuItem[] | null>(null);
   const [menuError, setMenuError] = useState<string | null>(null);
   const [category, setCategory] = useState<string>('');
@@ -97,7 +127,16 @@ export default function App() {
         <h1 className="font-display text-3xl tracking-wide bg-ember-gradient bg-clip-text text-transparent">
           Ember POS
         </h1>
-        <ConnectionPill status={connection} />
+        <div className="flex items-center gap-4">
+          <ConnectionPill status={connection} />
+          <span className="text-sm text-muted">{session?.username}</span>
+          <button
+            onClick={logout}
+            className="min-h-9 rounded-full border border-bone2 px-3 text-sm text-ink/70 hover:bg-ink/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ember"
+          >
+            Sign out
+          </button>
+        </div>
       </header>
 
       <div className="grid flex-1 grid-cols-1 overflow-hidden lg:grid-cols-[1fr_22rem]">
