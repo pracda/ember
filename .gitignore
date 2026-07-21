@@ -1,0 +1,26 @@
+# dependencies
+node_modules/
+
+# builds
+dist/
+apps/*/dist/
+packages/*/dist/
+
+# backend build
+backend/target/
+*.class
+
+# env
+.env
+.env.*
+!.env.example
+
+# editor / OS
+.idea/
+.vscode/
+*.iml
+.settings/
+.project
+.classpath
+.DS_Store
+*.log
