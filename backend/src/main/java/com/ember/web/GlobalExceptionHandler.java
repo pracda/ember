@@ -5,6 +5,7 @@ import com.ember.web.error.InvalidTransitionException;
 import com.ember.web.error.NotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -14,6 +15,11 @@ import java.util.stream.Collectors;
 /** Translates domain and validation errors into RFC 7807 problem responses. */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ProblemDetail unauthorized(AuthenticationException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, "Invalid username or password");
+    }
 
     @ExceptionHandler(NotFoundException.class)
     public ProblemDetail notFound(NotFoundException ex) {

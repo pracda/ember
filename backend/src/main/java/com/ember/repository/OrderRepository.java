@@ -5,6 +5,7 @@ import com.ember.domain.OrderStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
+import java.time.Instant;
 import java.util.List;
 
 public interface OrderRepository extends JpaRepository<Order, Long> {
@@ -18,6 +19,9 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     List<Order> findByStatusOrderByReadyAtDesc(OrderStatus status);
 
     List<Order> findAllByOrderByCreatedAtDesc();
+
+    /** Orders created within a half-open instant range — the day-summary report. */
+    List<Order> findByCreatedAtGreaterThanEqualAndCreatedAtLessThan(Instant start, Instant end);
 
     /** Highest ticket number issued so far, used to seed the ticket sequence on start-up. */
     @Query("select max(o.ticketNumber) from Order o")

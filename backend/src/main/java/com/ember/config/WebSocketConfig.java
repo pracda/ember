@@ -31,6 +31,10 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")
                 .setAllowedOriginPatterns(props.getAllowedOrigins().toArray(String[]::new))
-                .withSockJS();
+                .withSockJS()
+                // We authenticate with a JWT, not a session cookie. Telling SockJS no
+                // cookie is needed keeps its requests non-credentialed, so they pass the
+                // stateless CORS rules the security filter now applies to /ws too.
+                .setSessionCookieNeeded(false);
     }
 }

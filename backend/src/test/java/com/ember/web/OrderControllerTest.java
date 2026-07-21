@@ -9,6 +9,7 @@ import com.ember.web.error.NotFoundException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -31,7 +32,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * and the mapping of domain/validation errors to RFC 7807 problem responses via
  * {@link GlobalExceptionHandler}.
  */
+// Auth is verified separately (SecurityIntegrationTest); disable filters here so
+// these tests focus on controller behaviour and error mapping.
 @WebMvcTest(OrderController.class)
+@AutoConfigureMockMvc(addFilters = false)
 class OrderControllerTest {
 
     @Autowired
@@ -42,6 +46,11 @@ class OrderControllerTest {
 
     @MockitoBean
     private OrderService orders;
+
+    // The web slice picks up JwtAuthFilter (a @Component filter); satisfy its dependency.
+    // Filters are disabled here anyway (addFilters = false).
+    @MockitoBean
+    private com.ember.security.JwtService jwtService;
 
     private static OrderResponse sample() {
         var line = new OrderResponse.OrderLineResponse(

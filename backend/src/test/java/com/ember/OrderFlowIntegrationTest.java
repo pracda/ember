@@ -6,7 +6,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.simp.stomp.StompFrameHandler;
@@ -28,10 +32,9 @@ import java.util.concurrent.TimeUnit;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * End-to-end happy path over the real HTTP + WebSocket stack: the POS creates an
- * order, the kitchen advances it to READY, the board collects it — and every
- * step is observed as a STOMP broadcast on {@code /topic/orders}, the single
- * stream all three stations share.
+ * End-to-end happy path over the real HTTP + WebSocket stack: a signed-in cashier
+ * creates an order, a cook advances it to READY, the (open) board collects it —
+ * every step observed as a STOMP broadcast on {@code /topic/orders}.
  *
  * <p>Origins are opened to {@code *} for the test client so the SockJS handshake
  * is not rejected.</p>
@@ -79,15 +82,34 @@ class OrderFlowIntegrationTest {
         return (String) evt.get("type");
     }
 
-    private long postForId(String path) {
-        ResponseEntity<OrderResponse> resp =
-                rest.postForEntity("/api/orders" + path, null, OrderResponse.class);
+    @SuppressWarnings("unchecked")
+    private String login(String username, String password) {
+        var headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        String body = "{\"username\":\"" + username + "\",\"password\":\"" + password + "\"}";
+        ResponseEntity<Map> resp = rest.postForEntity(
+                "/api/auth/login", new HttpEntity<>(body, headers), Map.class);
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        return (String) resp.getBody().get("token");
+    }
+
+    /** POST a transition; pass a token for protected endpoints, null for the public collect. */
+    private long postForId(String path, String token) {
+        var headers = new HttpHeaders();
+        if (token != null) {
+            headers.setBearerAuth(token);
+        }
+        ResponseEntity<OrderResponse> resp = rest.exchange(
+                "/api/orders" + path, HttpMethod.POST, new HttpEntity<>(headers), OrderResponse.class);
         assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
         return resp.getBody().id();
     }
 
     @Test
     void createAdvanceReadyCollectBroadcastsEachStep() throws Exception {
+        String cashier = login("cashier", "cashier123");
+        String cook = login("cook", "cook123");
+
         StompSession session = subscribe();
         try {
             String createBody = """
@@ -96,11 +118,12 @@ class OrderFlowIntegrationTest {
                       {"itemId":"d1","quantity":1,"size":"Large"}
                     ]}""";
 
-            var headers = new org.springframework.http.HttpHeaders();
-            headers.setContentType(org.springframework.http.MediaType.APPLICATION_JSON);
+            var headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setBearerAuth(cashier);
             ResponseEntity<OrderResponse> created = rest.postForEntity(
                     "/api/orders",
-                    new org.springframework.http.HttpEntity<>(createBody, headers),
+                    new HttpEntity<>(createBody, headers),
                     OrderResponse.class);
 
             assertThat(created.getStatusCode()).isEqualTo(HttpStatus.CREATED);
@@ -113,10 +136,10 @@ class OrderFlowIntegrationTest {
             assertThat(order.tax()).isEqualByComparingTo("1.27");
             assertThat(order.total()).isEqualByComparingTo("16.22");
 
-            // drive the lifecycle
-            postForId("/" + id + "/advance"); // NEW -> PREP
-            postForId("/" + id + "/advance"); // PREP -> READY
-            postForId("/" + id + "/collect"); // READY -> DONE
+            // drive the lifecycle: cook advances, the open board collects
+            postForId("/" + id + "/advance", cook); // NEW -> PREP
+            postForId("/" + id + "/advance", cook); // PREP -> READY
+            postForId("/" + id + "/collect", null); // READY -> DONE (public)
 
             // and observe the matching broadcasts in order
             assertThat(nextEventType()).isEqualTo("ORDER_CREATED");

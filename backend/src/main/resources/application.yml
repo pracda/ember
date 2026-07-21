@@ -6,11 +6,17 @@ spring:
 ember:
   tax-rate: 0.085          # 8.5% sales tax on the subtotal
   meal-upcharge: 3.50      # flat upcharge to make an eligible item a meal
-  allowed-origins:         # the three station front-ends (Vite dev ports)
+  timezone: UTC            # outlet timezone for day-summary boundaries
+  allowed-origins:         # the station + admin front-ends (Vite dev ports)
     - http://localhost:5173  # POS
     - http://localhost:5174  # Kitchen
     - http://localhost:5175  # Board
+    - http://localhost:5176  # Admin
     - http://localhost:3000
+  jwt:
+    # Dev-only default; override with EMBER_JWT_SECRET in production.
+    secret: dev-only-ember-jwt-secret-change-me-in-production-please
+    ttl: 12h
 
 ---
 # ================= DEFAULT (dev) — in-memory H2 =================
@@ -56,3 +62,5 @@ spring:
 
 ember:
   allowed-origins: ${CORS_ORIGINS}
+  jwt:
+    secret: ${EMBER_JWT_SECRET}

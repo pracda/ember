@@ -303,9 +303,12 @@ Primary action = linear-gradient(150deg, `ember`, `flame`) with near-black text 
 
 ## 9. Cross-cutting
 
-- **Auth:** JWT bearer, reuse the retail project's filter. Roles: `CASHIER`, `COOK`,
-  `MANAGER`. Mutating endpoints require staff; the board's `collect` requires staff.
-  Menu admin (Phase 6) is `MANAGER` only. `GET /api/menu` may stay public.
+- **Auth:** JWT bearer (`POST /api/auth/login` → token; demo users cashier/cook/manager).
+  Roles: `CASHIER`, `COOK`, `MANAGER`. `POST /api/orders` → CASHIER/MANAGER;
+  `advance`/`recall` → COOK/MANAGER; menu writes + `/api/reports/**` → MANAGER.
+  `GET /api/menu` and `GET /api/orders/**` stay public. **Decision (build):** the
+  pickup board is left customer-facing, so `POST /api/orders/{id}/collect` is public
+  (not staff-gated). The manager back-office lives in a separate `apps/admin`.
 - **Config:** `ember.tax-rate`, `ember.meal-upcharge`, `ember.allowed-origins` (env in prod).
 - **Validation:** Bean Validation on requests; `GlobalExceptionHandler` → ProblemDetail.
 - **Ticket numbers:** monotonic via `TicketSequence` seeded from DB max. Add optional
