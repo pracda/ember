@@ -34,6 +34,14 @@ export interface MenuItem {
   mealAvailable: boolean;
   sizes: PriceModifier[];
   addons: PriceModifier[];
+  available: boolean;
+  tracksStock: boolean;
+  stock: number;
+  lowStockThreshold: number;
+  /** Effective: manually 86'd, or tracking stock and none left. */
+  soldOut: boolean;
+  /** Tracking stock and at/below the alert threshold. */
+  lowStock: boolean;
 }
 
 /** OrderResponse.OrderLineResponse — a frozen snapshot of one ordered line. */
@@ -146,6 +154,10 @@ export interface MenuItemInput {
   mealAvailable: boolean;
   sizes: PriceModifier[];
   addons: PriceModifier[];
+  available: boolean;
+  tracksStock: boolean;
+  stock: number;
+  lowStockThreshold: number;
 }
 
 /** Manager day-summary (mirrors DaySummaryResponse). */

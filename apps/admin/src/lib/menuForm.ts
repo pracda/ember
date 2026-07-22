@@ -2,7 +2,19 @@
 import type { MenuItem, MenuItemInput } from '@ember/shared';
 
 export function blankItem(): MenuItemInput {
-  return { id: '', name: '', category: '', basePrice: 0, mealAvailable: false, sizes: [], addons: [] };
+  return {
+    id: '',
+    name: '',
+    category: '',
+    basePrice: 0,
+    mealAvailable: false,
+    sizes: [],
+    addons: [],
+    available: true,
+    tracksStock: false,
+    stock: 0,
+    lowStockThreshold: 0,
+  };
 }
 
 export function toInput(item: MenuItem): MenuItemInput {
@@ -14,6 +26,10 @@ export function toInput(item: MenuItem): MenuItemInput {
     mealAvailable: item.mealAvailable,
     sizes: item.sizes.map((m) => ({ ...m })),
     addons: item.addons.map((m) => ({ ...m })),
+    available: item.available,
+    tracksStock: item.tracksStock,
+    stock: item.stock,
+    lowStockThreshold: item.lowStockThreshold,
   };
 }
 

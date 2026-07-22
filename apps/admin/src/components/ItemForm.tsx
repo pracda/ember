@@ -106,6 +106,52 @@ export function ItemForm({ initial, isNew, onSave, onDelete, onClose }: Props) {
           onChange={(addons) => set('addons', addons)}
         />
 
+        <section className="mt-4 rounded-xl border border-steel p-3">
+          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted">Availability & stock</h3>
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={item.available}
+              onChange={(e) => set('available', e.target.checked)}
+              className="h-4 w-4 accent-ember"
+            />
+            <span>Available {!item.available && <span className="text-late">(86’d — sold out)</span>}</span>
+          </label>
+          <label className="mt-2 flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={item.tracksStock}
+              onChange={(e) => set('tracksStock', e.target.checked)}
+              className="h-4 w-4 accent-ember"
+            />
+            <span>Track stock</span>
+          </label>
+          {item.tracksStock && (
+            <div className="mt-2 grid grid-cols-2 gap-3">
+              <label className="block text-sm">
+                <span className="text-muted">In stock</span>
+                <input
+                  type="number"
+                  min="0"
+                  value={item.stock}
+                  onChange={(e) => set('stock', Math.max(0, Number(e.target.value)))}
+                  className="input mt-1"
+                />
+              </label>
+              <label className="block text-sm">
+                <span className="text-muted">Low-stock alert at</span>
+                <input
+                  type="number"
+                  min="0"
+                  value={item.lowStockThreshold}
+                  onChange={(e) => set('lowStockThreshold', Math.max(0, Number(e.target.value)))}
+                  className="input mt-1"
+                />
+              </label>
+            </div>
+          )}
+        </section>
+
         {error && <p role="alert" className="mt-3 text-late">{error}</p>}
 
         <div className="mt-6 flex items-center gap-2">

@@ -30,6 +30,11 @@ export function MenuEditor() {
     load();
   };
 
+  const toggleAvailable = async (item: MenuItem) => {
+    await api.setMenuAvailability(item.id, !item.available);
+    load();
+  };
+
   if (error) {
     return (
       <div className="p-6 text-center">
@@ -39,6 +44,8 @@ export function MenuEditor() {
     );
   }
   if (!items) return <p className="p-6 text-muted">Loading menu…</p>;
+
+  const attention = items.filter((i) => i.soldOut || i.lowStock);
 
   return (
     <div className="p-6">
@@ -52,6 +59,12 @@ export function MenuEditor() {
         </button>
       </div>
 
+      {attention.length > 0 && (
+        <p className="mb-4 rounded-xl bg-working/10 px-4 py-2 text-sm text-working">
+          ⚠ {attention.map((i) => `${i.name}${i.soldOut ? ' (sold out)' : ` (${i.stock} left)`}`).join(' · ')}
+        </p>
+      )}
+
       <div className="overflow-hidden rounded-2xl border border-steel">
         <table className="w-full text-left">
           <thead className="bg-graphite text-xs uppercase tracking-wider text-muted">
@@ -60,8 +73,8 @@ export function MenuEditor() {
               <th className="px-4 py-2">Name</th>
               <th className="px-4 py-2">Category</th>
               <th className="px-4 py-2 text-right">Base price</th>
-              <th className="px-4 py-2">Meal</th>
-              <th className="px-4 py-2"></th>
+              <th className="px-4 py-2">Stock</th>
+              <th className="px-4 py-2 text-right"></th>
             </tr>
           </thead>
           <tbody>
@@ -71,8 +84,22 @@ export function MenuEditor() {
                 <td className="px-4 py-2 font-semibold">{item.name}</td>
                 <td className="px-4 py-2 text-bone/80">{item.category}</td>
                 <td className="px-4 py-2 text-right font-mono">{money(item.basePrice)}</td>
-                <td className="px-4 py-2">{item.mealAvailable ? '✓' : '—'}</td>
+                <td className="px-4 py-2">
+                  {item.soldOut ? (
+                    <span className="text-late">Sold out</span>
+                  ) : item.tracksStock ? (
+                    <span className={item.lowStock ? 'text-working' : 'text-bone/80'}>{item.stock} in stock</span>
+                  ) : (
+                    <span className="text-muted">—</span>
+                  )}
+                </td>
                 <td className="px-4 py-2 text-right">
+                  <button
+                    onClick={() => toggleAvailable(item)}
+                    className="rounded-lg px-3 py-1 text-muted hover:bg-steel2 hover:text-bone"
+                  >
+                    {item.available ? '86' : 'Un-86'}
+                  </button>
                   <button
                     onClick={() => setEditing({ input: toInput(item), isNew: false })}
                     className="rounded-lg px-3 py-1 text-flame hover:bg-steel2"

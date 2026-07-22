@@ -5,6 +5,12 @@ import type { MenuItem } from '@ember/shared';
 import { CustomizeModal } from './CustomizeModal';
 
 const burger: MenuItem = {
+  available: true,
+  tracksStock: false,
+  stock: 0,
+  lowStockThreshold: 0,
+  soldOut: false,
+  lowStock: false,
   id: 'b1',
   name: 'Ember Smash',
   category: 'Burgers',

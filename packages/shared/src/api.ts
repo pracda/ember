@@ -112,6 +112,12 @@ export const api = {
     request<MenuItem>(`/api/menu/${id}`, { method: 'PUT', body: JSON.stringify(item) }),
   deleteMenuItem: (id: string) =>
     request<void>(`/api/menu/${id}`, { method: 'DELETE' }),
+  setMenuAvailability: (id: string, available: boolean) =>
+    request<MenuItem>(`/api/menu/${id}/availability`, {
+      method: 'PUT',
+      body: JSON.stringify({ available }),
+    }),
+  getLowStock: () => request<MenuItem[]>('/api/reports/low-stock'),
 
   // reporting (MANAGER)
   getDaySummary: (date?: string) =>

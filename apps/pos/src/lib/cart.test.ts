@@ -11,7 +11,17 @@ import {
   type LineChoices,
 } from './cart';
 
+const STOCK = {
+  available: true,
+  tracksStock: false,
+  stock: 0,
+  lowStockThreshold: 0,
+  soldOut: false,
+  lowStock: false,
+} as const;
+
 const burger: MenuItem = {
+  ...STOCK,
   id: 'b1',
   name: 'Ember Smash',
   category: 'Burgers',
@@ -26,6 +36,7 @@ const burger: MenuItem = {
 };
 
 const soda: MenuItem = {
+  ...STOCK,
   id: 'd1',
   name: 'Fountain Soda',
   category: 'Drinks',
