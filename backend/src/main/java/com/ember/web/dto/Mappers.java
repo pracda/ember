@@ -33,7 +33,9 @@ public final class Mappers {
         return new MenuItemResponse(
                 m.getId(), m.getName(), m.getCategory(), m.getBasePrice(), m.isMealAvailable(),
                 m.getSizes().stream().map(Mappers::toModifier).toList(),
-                m.getAddons().stream().map(Mappers::toModifier).toList());
+                m.getAddons().stream().map(Mappers::toModifier).toList(),
+                m.isAvailable(), m.isTracksStock(), m.getStock(), m.getLowStockThreshold(),
+                m.isSoldOut(), m.isLowStock());
     }
 
     private static MenuItemResponse.ModifierResponse toModifier(PriceModifier p) {

@@ -4,6 +4,7 @@ import com.ember.config.EmberProperties;
 import com.ember.service.ReportService;
 import com.ember.web.dto.AnalyticsResponse;
 import com.ember.web.dto.DaySummaryResponse;
+import com.ember.web.dto.MenuItemResponse;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
+import java.util.List;
 
 /** Manager reporting. Protected as MANAGER-only by {@code SecurityConfig}. */
 @RestController
@@ -44,5 +46,11 @@ public class ReportController {
         LocalDate start = from != null ? from : today;
         LocalDate end = to != null ? to : today;
         return reports.analytics(start, end);
+    }
+
+    /** {@code GET /api/reports/low-stock} — tracked items running low or out. */
+    @GetMapping("/low-stock")
+    public List<MenuItemResponse> lowStock() {
+        return reports.lowStock();
     }
 }

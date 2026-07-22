@@ -8,6 +8,7 @@ import com.ember.domain.OrderType;
 import com.ember.repository.MenuItemRepository;
 import com.ember.repository.OrderRepository;
 import com.ember.repository.StaffRepository;
+import com.ember.web.dto.MenuItemResponse;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
@@ -102,6 +103,23 @@ class ReportServiceTest {
         assertThat(a.voidedCount()).isEqualTo(1);
         assertThat(a.refundedCount()).isEqualTo(1);
         assertThat(a.refundedAmount()).isEqualByComparingTo("8.00");
+    }
+
+    @Test
+    void lowStockListsTrackedItemsAtOrBelowThreshold() {
+        MenuItem low = new MenuItem("b1", "Ember Smash", "Burgers", new BigDecimal("6.50"), true);
+        low.setTracksStock(true);
+        low.setStock(2);
+        low.setLowStockThreshold(3);
+        menu.saveAndFlush(low);
+
+        MenuItem plenty = new MenuItem("d1", "Fountain Soda", "Drinks", new BigDecimal("2.25"), false);
+        plenty.setTracksStock(true);
+        plenty.setStock(50);
+        plenty.setLowStockThreshold(5);
+        menu.saveAndFlush(plenty);
+
+        assertThat(service().lowStock()).extracting(MenuItemResponse::id).containsExactly("b1");
     }
 
     @Test

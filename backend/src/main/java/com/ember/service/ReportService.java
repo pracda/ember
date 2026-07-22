@@ -18,6 +18,8 @@ import com.ember.web.dto.AnalyticsResponse.ItemSales;
 import com.ember.web.dto.AnalyticsResponse.StaffSales;
 import com.ember.web.dto.AnalyticsResponse.TypeSales;
 import com.ember.web.dto.DaySummaryResponse;
+import com.ember.web.dto.MenuItemResponse;
+import com.ember.web.dto.Mappers;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -88,6 +90,16 @@ public class ReportService {
                 byOrderType(net),
                 byHour(net, zone),
                 byStaff(net));
+    }
+
+    /** Tracked items at or below their low-stock threshold (includes sold out), lowest first. */
+    @Transactional(readOnly = true)
+    public List<MenuItemResponse> lowStock() {
+        return menu.findAll().stream()
+                .filter(MenuItem::isLowStock)
+                .sorted(Comparator.comparingInt(MenuItem::getStock))
+                .map(Mappers::toMenuItem)
+                .toList();
     }
 
     /** Orders that count as sales — everything except VOIDED and REFUNDED. */

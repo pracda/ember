@@ -11,6 +11,7 @@ import com.ember.web.dto.Mappers;
 import com.ember.web.dto.OrderEvent;
 import com.ember.web.dto.OrderLineRequest;
 import com.ember.web.dto.OrderResponse;
+import com.ember.web.error.BadRequestException;
 import com.ember.web.error.NotFoundException;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
@@ -57,6 +58,13 @@ public class OrderService {
             MenuItem item = menu.findById(lineReq.itemId())
                     .orElseThrow(() -> new NotFoundException("Unknown menu item: " + lineReq.itemId()));
 
+            if (item.isSoldOut()) {
+                throw new BadRequestException(item.getName() + " is sold out");
+            }
+            if (item.isTracksStock() && lineReq.quantity() > item.getStock()) {
+                throw new BadRequestException("Only " + item.getStock() + " " + item.getName() + " left");
+            }
+
             BigDecimal unit = pricing.unitPrice(item, lineReq);
 
             OrderLine line = new OrderLine();
@@ -69,6 +77,10 @@ public class OrderService {
             line.setNotes(lineReq.notes());
             line.setUnitPrice(unit);
             order.addLine(line);
+
+            if (item.isTracksStock()) {
+                item.setStock(item.getStock() - lineReq.quantity());
+            }
 
             subtotal = subtotal.add(line.lineTotal());
         }
@@ -111,6 +123,14 @@ public class OrderService {
         order.voidOrder();
         order.setReason(reason);
         order.setResolvedBy(currentUsername());
+        // A voided order was never made — put its tracked stock back.
+        for (OrderLine line : order.getLines()) {
+            menu.findById(line.getMenuItemId()).ifPresent(item -> {
+                if (item.isTracksStock()) {
+                    item.setStock(item.getStock() + line.getQuantity());
+                }
+            });
+        }
         return publish(order, OrderEvent.Type.ORDER_VOIDED);
     }
 

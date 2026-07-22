@@ -41,7 +41,7 @@ public class MenuService {
         MenuItem item = new MenuItem(
                 request.id(), request.name(), request.category(),
                 request.basePrice(), request.mealAvailable());
-        applyModifiers(item, request);
+        applyFields(item, request);
         return Mappers.toMenuItem(menu.save(item));
     }
 
@@ -53,8 +53,17 @@ public class MenuService {
         item.setCategory(request.category());
         item.setBasePrice(request.basePrice());
         item.setMealAvailable(request.mealAvailable());
-        applyModifiers(item, request);
+        applyFields(item, request);
         return Mappers.toMenuItem(menu.save(item));
+    }
+
+    /** Quick 86 / un-86 toggle. */
+    @Transactional
+    public MenuItemResponse setAvailability(String id, boolean available) {
+        MenuItem item = menu.findById(id)
+                .orElseThrow(() -> new NotFoundException("Unknown menu item: " + id));
+        item.setAvailable(available);
+        return Mappers.toMenuItem(item);
     }
 
     @Transactional
@@ -65,9 +74,13 @@ public class MenuService {
         menu.deleteById(id);
     }
 
-    private static void applyModifiers(MenuItem item, MenuItemRequest request) {
+    private static void applyFields(MenuItem item, MenuItemRequest request) {
         item.setSizes(toModifiers(request.sizes()));
         item.setAddons(toModifiers(request.addons()));
+        item.setAvailable(request.availableOrDefault());
+        item.setTracksStock(request.tracksStock());
+        item.setStock(request.stock());
+        item.setLowStockThreshold(request.lowStockThreshold());
     }
 
     private static List<PriceModifier> toModifiers(List<ModifierRequest> mods) {

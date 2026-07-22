@@ -10,7 +10,13 @@ public record MenuItemResponse(
         BigDecimal basePrice,
         boolean mealAvailable,
         List<ModifierResponse> sizes,
-        List<ModifierResponse> addons
+        List<ModifierResponse> addons,
+        boolean available,
+        boolean tracksStock,
+        int stock,
+        int lowStockThreshold,
+        boolean soldOut,
+        boolean lowStock
 ) {
     public record ModifierResponse(String label, BigDecimal priceDelta) { }
 }

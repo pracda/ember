@@ -50,6 +50,20 @@ public class MenuItem {
     @Column(name = "meal_available", nullable = false)
     private boolean mealAvailable = false;
 
+    /** Manual "86" switch — false means sold out regardless of stock. */
+    @Column(nullable = false)
+    private boolean available = true;
+
+    /** When true, {@link #stock} is decremented on sale and enforced. */
+    @Column(name = "tracks_stock", nullable = false)
+    private boolean tracksStock = false;
+
+    @Column(nullable = false)
+    private int stock = 0;
+
+    @Column(name = "low_stock_threshold", nullable = false)
+    private int lowStockThreshold = 0;
+
     protected MenuItem() { }
 
     public MenuItem(String id, String name, String category, BigDecimal basePrice, boolean mealAvailable) {
@@ -90,4 +104,26 @@ public class MenuItem {
 
     public boolean isMealAvailable() { return mealAvailable; }
     public void setMealAvailable(boolean mealAvailable) { this.mealAvailable = mealAvailable; }
+
+    public boolean isAvailable() { return available; }
+    public void setAvailable(boolean available) { this.available = available; }
+
+    public boolean isTracksStock() { return tracksStock; }
+    public void setTracksStock(boolean tracksStock) { this.tracksStock = tracksStock; }
+
+    public int getStock() { return stock; }
+    public void setStock(int stock) { this.stock = stock; }
+
+    public int getLowStockThreshold() { return lowStockThreshold; }
+    public void setLowStockThreshold(int lowStockThreshold) { this.lowStockThreshold = lowStockThreshold; }
+
+    /** Effective sold-out: manually 86'd, or tracking stock and none left. */
+    public boolean isSoldOut() {
+        return !available || (tracksStock && stock <= 0);
+    }
+
+    /** Running low: tracking stock and at/below the alert threshold (includes sold out). */
+    public boolean isLowStock() {
+        return tracksStock && stock <= lowStockThreshold;
+    }
 }

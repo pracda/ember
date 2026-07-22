@@ -44,7 +44,8 @@ class MenuControllerTest {
     private JwtService jwtService;
 
     private static MenuItemResponse sample() {
-        return new MenuItemResponse("x1", "Test Item", "Sides", new BigDecimal("3.00"), false, List.of(), List.of());
+        return new MenuItemResponse("x1", "Test Item", "Sides", new BigDecimal("3.00"), false,
+                List.of(), List.of(), true, false, 0, 0, false, false);
     }
 
     @Test

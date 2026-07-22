@@ -1,6 +1,7 @@
 package com.ember.web;
 
 import com.ember.service.MenuService;
+import com.ember.web.dto.AvailabilityRequest;
 import com.ember.web.dto.MenuItemRequest;
 import com.ember.web.dto.MenuItemResponse;
 import jakarta.validation.Valid;
@@ -51,5 +52,12 @@ public class MenuController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable String id) {
         menu.delete(id);
+    }
+
+    /** Quick 86 / un-86 toggle. */
+    @PutMapping("/{id}/availability")
+    public MenuItemResponse setAvailability(@PathVariable String id,
+                                            @Valid @RequestBody AvailabilityRequest request) {
+        return menu.setAvailability(id, request.available());
     }
 }
