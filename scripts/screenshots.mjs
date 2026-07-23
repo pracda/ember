@@ -57,6 +57,13 @@ await shot(pos, 'pos');
 await shot(await open('http://localhost:5174', cook), 'kitchen');
 await shot(await open('http://localhost:5175', null), 'board');
 
+// Seed a demo gateway key so the Assistant tab shows its configured state.
+await fetch(API + '/api/assistant/config', {
+  method: 'PUT',
+  headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${manager.token}` },
+  body: JSON.stringify({ apiKey: 'sk-demo-gateway-key-ABCD1234', baseUrl: 'https://llm-gateway.example.com', model: 'claude-opus-4-8' }),
+}).catch(() => {});
+
 const admin = await open('http://localhost:5176', manager);
 for (const [tab, name] of [
   ['Menu', 'admin-menu'],
@@ -64,9 +71,10 @@ for (const [tab, name] of [
   ['Schedule', 'admin-schedule'],
   ['Reports', 'admin-analytics'],
   ['Employees', 'admin-employees'],
+  ['Assistant', 'admin-assistant'],
 ]) {
   await admin.getByRole('button', { name: tab }).click();
-  await admin.waitForTimeout(tab === 'Reports' || tab === 'Schedule' ? 1300 : 700);
+  await admin.waitForTimeout(tab === 'Reports' || tab === 'Schedule' ? 1300 : 800);
   await shot(admin, name);
 }
 
