@@ -5,11 +5,12 @@ import { useAuth } from '@ember/shared';
 import { Login } from './components/Login';
 import { MenuEditor } from './components/MenuEditor';
 import { Analytics } from './components/Analytics';
+import { Assistant } from './components/Assistant';
 import { Employees } from './components/Employees';
 import { Orders } from './components/Orders';
 import { Schedule } from './components/Schedule';
 
-type Tab = 'menu' | 'orders' | 'report' | 'staff' | 'schedule';
+type Tab = 'menu' | 'orders' | 'report' | 'staff' | 'schedule' | 'assistant';
 
 export default function App() {
   const { session, login, logout } = useAuth();
@@ -49,6 +50,8 @@ function Admin({ username, onLogout }: { username: string; onLogout: () => void 
       <Schedule />
     ) : tab === 'report' ? (
       <Analytics />
+    ) : tab === 'assistant' ? (
+      <Assistant />
     ) : (
       <Employees currentUsername={username} />
     );
@@ -66,6 +69,7 @@ function Admin({ username, onLogout }: { username: string; onLogout: () => void 
             <TabButton active={tab === 'schedule'} onClick={() => setTab('schedule')}>Schedule</TabButton>
             <TabButton active={tab === 'staff'} onClick={() => setTab('staff')}>Employees</TabButton>
             <TabButton active={tab === 'report'} onClick={() => setTab('report')}>Reports</TabButton>
+            <TabButton active={tab === 'assistant'} onClick={() => setTab('assistant')}>Assistant</TabButton>
           </nav>
         </div>
         <div className="flex items-center gap-3">

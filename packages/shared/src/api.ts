@@ -9,6 +9,9 @@
 import { getToken, setSession } from './auth';
 import type {
   Analytics,
+  AssistantConfig,
+  AssistantConfigInput,
+  AssistantMessage,
   AuthSession,
   CreateOrderRequest,
   DaySummary,
@@ -157,6 +160,13 @@ export const api = {
   updateShift: (id: number, input: ShiftInput) =>
     request<Shift>(`/api/shifts/${id}`, { method: 'PUT', body: JSON.stringify(input) }),
   deleteShift: (id: number) => request<void>(`/api/shifts/${id}`, { method: 'DELETE' }),
+
+  // AI assistant (MANAGER)
+  getAssistantConfig: () => request<AssistantConfig>('/api/assistant/config'),
+  setAssistantConfig: (input: AssistantConfigInput) =>
+    request<AssistantConfig>('/api/assistant/config', { method: 'PUT', body: JSON.stringify(input) }),
+  assistantChat: (messages: AssistantMessage[]) =>
+    request<{ reply: string }>('/api/assistant/chat', { method: 'POST', body: JSON.stringify({ messages }) }),
 };
 
 export type Api = typeof api;

@@ -185,6 +185,29 @@ export interface LaborRow {
   salesPerHour: number;
 }
 
+/* ----- AI assistant (Phase 13) ----- */
+
+/** One chat turn. */
+export interface AssistantMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+/** Masked gateway config — the raw key is never sent to the client. */
+export interface AssistantConfig {
+  configured: boolean;
+  keyPreview: string | null;
+  baseUrl: string;
+  model: string;
+}
+
+/** Update the gateway config (apiKey omitted = leave unchanged, "" = clear). */
+export interface AssistantConfigInput {
+  apiKey?: string;
+  baseUrl?: string;
+  model?: string;
+}
+
 /** Manager payload to create or update a menu item (mirrors MenuItemRequest). */
 export interface MenuItemInput {
   id: string;
