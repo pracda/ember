@@ -145,6 +145,46 @@ export interface StaffUpdate {
   active: boolean;
 }
 
+/* ----- time-clock & scheduling (Phase 11) ----- */
+
+/** A time-clock punch; clockOut is null while open. */
+export interface TimeEntry {
+  id: number;
+  staffId: number;
+  clockIn: string;
+  clockOut: string | null;
+}
+
+/** A scheduled shift (mirrors ShiftResponse). */
+export interface Shift {
+  id: number;
+  staffId: number;
+  staffName: string;
+  workDate: string;
+  startTime: string;
+  endTime: string;
+  note: string | null;
+}
+
+/** Create/update a shift (times as "HH:mm"). */
+export interface ShiftInput {
+  staffId: number;
+  workDate: string;
+  startTime: string;
+  endTime: string;
+  note?: string;
+}
+
+/** One staff member's hours + sales (mirrors LaborRow). */
+export interface LaborRow {
+  staffId: number;
+  displayName: string;
+  hoursWorked: number;
+  sales: number;
+  ordersServed: number;
+  salesPerHour: number;
+}
+
 /** Manager payload to create or update a menu item (mirrors MenuItemRequest). */
 export interface MenuItemInput {
   id: string;

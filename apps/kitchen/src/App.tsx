@@ -4,6 +4,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import {
   ApiError,
+  ClockButton,
   PinLogin,
   api,
   useActiveOrders,
@@ -121,6 +122,7 @@ function Kds() {
             </button>
           )}
           <ConnectionPill status={connection} />
+          <ClockButton dark />
           <span className="text-sm text-muted">{session?.username}</span>
           <button
             onClick={logout}

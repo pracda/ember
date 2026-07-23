@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   ApiError,
+  ClockButton,
   PinLogin,
   api,
   useAuth,
@@ -129,6 +130,7 @@ function Pos() {
         </h1>
         <div className="flex items-center gap-4">
           <ConnectionPill status={connection} />
+          <ClockButton />
           <span className="text-sm text-muted">{session?.username}</span>
           <button
             onClick={logout}

@@ -8,3 +8,4 @@ export * from './useAuth';
 export * from './useOrderStore';
 export * from './useOrderStream';
 export * from './components/PinLogin';
+export * from './components/ClockButton';

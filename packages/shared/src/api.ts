@@ -12,13 +12,17 @@ import type {
   AuthSession,
   CreateOrderRequest,
   DaySummary,
+  LaborRow,
   MenuItem,
   MenuItemInput,
   Order,
   RosterEntry,
+  Shift,
+  ShiftInput,
   Staff,
   StaffInput,
   StaffUpdate,
+  TimeEntry,
 } from './types';
 
 export const apiBase: string = import.meta.env.VITE_API_BASE ?? 'http://localhost:8080';
@@ -136,6 +140,23 @@ export const api = {
   setStaffPassword: (id: number, password: string) =>
     request<void>(`/api/staff/${id}/password`, { method: 'PUT', body: JSON.stringify({ password }) }),
   deleteStaff: (id: number) => request<void>(`/api/staff/${id}`, { method: 'DELETE' }),
+
+  // reporting — labor / shift performance (MANAGER)
+  getLabor: (from: string, to: string) =>
+    request<LaborRow[]>(`/api/reports/labor?from=${from}&to=${to}`),
+
+  // time-clock (any signed-in staff)
+  clockIn: () => request<TimeEntry>('/api/timeclock/in', { method: 'POST' }),
+  clockOut: () => request<TimeEntry>('/api/timeclock/out', { method: 'POST' }),
+  getMyTimeclock: () => request<TimeEntry | null>('/api/timeclock/me'),
+
+  // scheduling (MANAGER)
+  getShifts: (from: string, to: string) => request<Shift[]>(`/api/shifts?from=${from}&to=${to}`),
+  createShift: (input: ShiftInput) =>
+    request<Shift>('/api/shifts', { method: 'POST', body: JSON.stringify(input) }),
+  updateShift: (id: number, input: ShiftInput) =>
+    request<Shift>(`/api/shifts/${id}`, { method: 'PUT', body: JSON.stringify(input) }),
+  deleteShift: (id: number) => request<void>(`/api/shifts/${id}`, { method: 'DELETE' }),
 };
 
 export type Api = typeof api;

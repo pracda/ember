@@ -7,8 +7,9 @@ import { MenuEditor } from './components/MenuEditor';
 import { Analytics } from './components/Analytics';
 import { Employees } from './components/Employees';
 import { Orders } from './components/Orders';
+import { Schedule } from './components/Schedule';
 
-type Tab = 'menu' | 'orders' | 'report' | 'staff';
+type Tab = 'menu' | 'orders' | 'report' | 'staff' | 'schedule';
 
 export default function App() {
   const { session, login, logout } = useAuth();
@@ -44,6 +45,8 @@ function Admin({ username, onLogout }: { username: string; onLogout: () => void 
       <MenuEditor />
     ) : tab === 'orders' ? (
       <Orders />
+    ) : tab === 'schedule' ? (
+      <Schedule />
     ) : tab === 'report' ? (
       <Analytics />
     ) : (
@@ -60,6 +63,7 @@ function Admin({ username, onLogout }: { username: string; onLogout: () => void 
           <nav className="flex gap-2">
             <TabButton active={tab === 'menu'} onClick={() => setTab('menu')}>Menu</TabButton>
             <TabButton active={tab === 'orders'} onClick={() => setTab('orders')}>Orders</TabButton>
+            <TabButton active={tab === 'schedule'} onClick={() => setTab('schedule')}>Schedule</TabButton>
             <TabButton active={tab === 'staff'} onClick={() => setTab('staff')}>Employees</TabButton>
             <TabButton active={tab === 'report'} onClick={() => setTab('report')}>Reports</TabButton>
           </nav>
