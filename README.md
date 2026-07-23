@@ -48,6 +48,10 @@ A back-office for the menu, orders, reporting and staff.
 | **Orders (void / refund)** | **Employees** |
 | <img src="docs/images/admin-orders.png" alt="Admin orders"> | <img src="docs/images/admin-employees.png" alt="Admin employees"> |
 
+**Schedule — roster + shift performance**
+
+<img src="docs/images/admin-schedule.png" alt="Admin schedule" width="820">
+
 ---
 
 ## Features
@@ -62,6 +66,7 @@ A back-office for the menu, orders, reporting and staff.
 - **Inventory & low-stock** — per-item stock tracking, decrement on sale, 86 / un-86, sold-out enforcement, low-stock alerts (stock is restored when an order is voided)
 - **Voids & refunds** — cancel active orders or refund completed ones with a reason; excluded from net sales
 - **Analytics** — orders, revenue, average order value, sales over time, top items, category & order-type split, peak hours, and per-staff sales
+- **Scheduling & time-clock** — build the **roster** (shifts per staff), staff **clock in / out** from the station header, and a **shift-performance** report (hours worked + sales + sales/hour per staff)
 - **Employees** — a real staff store with per-employee **PIN** (stations) and **password** (admin), role management, and reset/deactivate
 
 **Auth & roles**

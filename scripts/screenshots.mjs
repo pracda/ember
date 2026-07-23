@@ -61,11 +61,12 @@ const admin = await open('http://localhost:5176', manager);
 for (const [tab, name] of [
   ['Menu', 'admin-menu'],
   ['Orders', 'admin-orders'],
+  ['Schedule', 'admin-schedule'],
   ['Reports', 'admin-analytics'],
   ['Employees', 'admin-employees'],
 ]) {
   await admin.getByRole('button', { name: tab }).click();
-  await admin.waitForTimeout(tab === 'Reports' ? 1300 : 700);
+  await admin.waitForTimeout(tab === 'Reports' || tab === 'Schedule' ? 1300 : 700);
   await shot(admin, name);
 }
 
