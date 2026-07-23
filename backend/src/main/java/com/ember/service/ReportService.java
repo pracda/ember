@@ -7,9 +7,11 @@ import com.ember.domain.OrderLine;
 import com.ember.domain.OrderStatus;
 import com.ember.domain.OrderType;
 import com.ember.domain.Staff;
+import com.ember.domain.TimeEntry;
 import com.ember.repository.MenuItemRepository;
 import com.ember.repository.OrderRepository;
 import com.ember.repository.StaffRepository;
+import com.ember.repository.TimeEntryRepository;
 import com.ember.web.dto.AnalyticsResponse;
 import com.ember.web.dto.AnalyticsResponse.CategorySales;
 import com.ember.web.dto.AnalyticsResponse.DailySales;
@@ -18,6 +20,7 @@ import com.ember.web.dto.AnalyticsResponse.ItemSales;
 import com.ember.web.dto.AnalyticsResponse.StaffSales;
 import com.ember.web.dto.AnalyticsResponse.TypeSales;
 import com.ember.web.dto.DaySummaryResponse;
+import com.ember.web.dto.LaborRow;
 import com.ember.web.dto.MenuItemResponse;
 import com.ember.web.dto.Mappers;
 import org.springframework.stereotype.Service;
@@ -32,8 +35,10 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /** Manager reporting: the day summary and the date-range analytics dashboard. */
 @Service
@@ -42,13 +47,15 @@ public class ReportService {
     private final OrderRepository orders;
     private final MenuItemRepository menu;
     private final StaffRepository staff;
+    private final TimeEntryRepository timeEntries;
     private final EmberProperties props;
 
-    public ReportService(OrderRepository orders, MenuItemRepository menu,
-                         StaffRepository staff, EmberProperties props) {
+    public ReportService(OrderRepository orders, MenuItemRepository menu, StaffRepository staff,
+                         TimeEntryRepository timeEntries, EmberProperties props) {
         this.orders = orders;
         this.menu = menu;
         this.staff = staff;
+        this.timeEntries = timeEntries;
         this.props = props;
     }
 
@@ -100,6 +107,62 @@ public class ReportService {
                 .sorted(Comparator.comparingInt(MenuItem::getStock))
                 .map(Mappers::toMenuItem)
                 .toList();
+    }
+
+    /** Shift performance: hours worked (from the time clock) alongside net sales, per staff. */
+    @Transactional(readOnly = true)
+    public List<LaborRow> labor(LocalDate from, LocalDate to) {
+        ZoneId zone = props.getTimezone();
+        Instant start = from.atStartOfDay(zone).toInstant();
+        Instant end = to.plusDays(1).atStartOfDay(zone).toInstant();
+
+        Map<Long, Long> minutes = new LinkedHashMap<>();
+        for (TimeEntry e : timeEntries.findByClockInGreaterThanEqualAndClockInLessThan(start, end)) {
+            if (e.getClockOut() != null) {
+                minutes.merge(e.getStaffId(),
+                        Duration.between(e.getClockIn(), e.getClockOut()).toMinutes(), Long::sum);
+            }
+        }
+
+        Map<String, BigDecimal> salesByUser = new LinkedHashMap<>();
+        Map<String, Integer> ordersByUser = new LinkedHashMap<>();
+        for (Order o : netSales(ordersOn(from, to))) {
+            if (o.getServedBy() != null) {
+                salesByUser.merge(o.getServedBy(), o.getTotal(), BigDecimal::add);
+                ordersByUser.merge(o.getServedBy(), 1, Integer::sum);
+            }
+        }
+
+        Map<Long, Staff> byId = new LinkedHashMap<>();
+        Map<String, Long> idByUsername = new LinkedHashMap<>();
+        for (Staff s : staff.findAll()) {
+            byId.put(s.getId(), s);
+            idByUsername.put(s.getUsername(), s.getId());
+        }
+
+        Set<Long> ids = new LinkedHashSet<>(minutes.keySet());
+        salesByUser.keySet().forEach(u -> {
+            Long id = idByUsername.get(u);
+            if (id != null) ids.add(id);
+        });
+
+        List<LaborRow> rows = new ArrayList<>();
+        for (Long id : ids) {
+            Staff s = byId.get(id);
+            String name = s != null ? s.getDisplayName() : "—";
+            String username = s != null ? s.getUsername() : null;
+            BigDecimal hours = BigDecimal.valueOf(minutes.getOrDefault(id, 0L))
+                    .divide(BigDecimal.valueOf(60), 2, RoundingMode.HALF_UP);
+            BigDecimal sales = scale(username != null
+                    ? salesByUser.getOrDefault(username, BigDecimal.ZERO) : BigDecimal.ZERO);
+            int served = username != null ? ordersByUser.getOrDefault(username, 0) : 0;
+            BigDecimal perHour = hours.signum() > 0
+                    ? sales.divide(hours, 2, RoundingMode.HALF_UP)
+                    : scale(BigDecimal.ZERO);
+            rows.add(new LaborRow(id, name, hours, sales, served, perHour));
+        }
+        rows.sort(Comparator.comparing(LaborRow::sales).reversed());
+        return rows;
     }
 
     /** Orders that count as sales — everything except VOIDED and REFUNDED. */

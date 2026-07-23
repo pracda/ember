@@ -4,6 +4,7 @@ import com.ember.config.EmberProperties;
 import com.ember.service.ReportService;
 import com.ember.web.dto.AnalyticsResponse;
 import com.ember.web.dto.DaySummaryResponse;
+import com.ember.web.dto.LaborRow;
 import com.ember.web.dto.MenuItemResponse;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -52,5 +53,14 @@ public class ReportController {
     @GetMapping("/low-stock")
     public List<MenuItemResponse> lowStock() {
         return reports.lowStock();
+    }
+
+    /** {@code GET /api/reports/labor?from=&to=} — hours worked + sales per staff. */
+    @GetMapping("/labor")
+    public List<LaborRow> labor(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        LocalDate today = LocalDate.now(props.getTimezone());
+        return reports.labor(from != null ? from : today, to != null ? to : today);
     }
 }

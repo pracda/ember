@@ -5,9 +5,14 @@ import com.ember.domain.MenuItem;
 import com.ember.domain.Order;
 import com.ember.domain.OrderLine;
 import com.ember.domain.OrderType;
+import com.ember.domain.Staff;
+import com.ember.domain.StaffRole;
+import com.ember.domain.TimeEntry;
 import com.ember.repository.MenuItemRepository;
 import com.ember.repository.OrderRepository;
 import com.ember.repository.StaffRepository;
+import com.ember.repository.TimeEntryRepository;
+import com.ember.web.dto.LaborRow;
 import com.ember.web.dto.MenuItemResponse;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,13 +33,15 @@ class ReportServiceTest {
     private MenuItemRepository menu;
     @Autowired
     private StaffRepository staff;
+    @Autowired
+    private TimeEntryRepository timeEntries;
 
     private int ticket = 1;
 
     private ReportService service() {
         EmberProperties props = new EmberProperties();
         props.setTimezone(ZoneId.of("UTC"));
-        return new ReportService(orders, menu, staff, props);
+        return new ReportService(orders, menu, staff, timeEntries, props);
     }
 
     private void persist(String total, boolean toReady) {
@@ -120,6 +127,24 @@ class ReportServiceTest {
         menu.saveAndFlush(plenty);
 
         assertThat(service().lowStock()).extracting(MenuItemResponse::id).containsExactly("b1");
+    }
+
+    @Test
+    void laborCombinesHoursAndSalesPerStaff() {
+        Staff amy = staff.saveAndFlush(new Staff("amy", "Amy", StaffRole.CASHIER));
+        TimeEntry entry = new TimeEntry(amy.getId());
+        entry.clockOut();
+        timeEntries.saveAndFlush(entry);
+        persistOrder(OrderType.DINE_IN, "10.00", "amy", line("b1", "Ember Smash", 1, "10.00"));
+
+        LocalDate today = LocalDate.now(ZoneId.of("UTC"));
+        var rows = service().labor(today, today);
+
+        var amyRow = rows.stream().filter(r -> "Amy".equals(r.displayName())).findFirst().orElseThrow();
+        assertThat(amyRow.sales()).isEqualByComparingTo("10.00");
+        assertThat(amyRow.ordersServed()).isEqualTo(1);
+        assertThat(amyRow.hoursWorked()).isNotNull();
+        assertThat(amyRow.salesPerHour()).isNotNull();
     }
 
     @Test
