@@ -62,6 +62,14 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- Anthropic Java SDK — the admin AI assistant calls a configurable LLM gateway
+             (base URL + key stored in the admin panel) over the Messages API. -->
+        <dependency>
+            <groupId>com.anthropic</groupId>
+            <artifactId>anthropic-java</artifactId>
+            <version>2.34.0</version>
+        </dependency>
+
         <!-- Schema migrations: Flyway (prod). PostgreSQL support module for Flyway 10+. -->
         <dependency>
             <groupId>org.flywaydb</groupId>

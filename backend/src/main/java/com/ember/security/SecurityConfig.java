@@ -68,6 +68,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/reports/**").hasRole("MANAGER")
                         .requestMatchers("/api/staff/**").hasRole("MANAGER")
                         .requestMatchers("/api/shifts/**").hasRole("MANAGER")
+                        .requestMatchers("/api/assistant/**").hasRole("MANAGER")
                         .anyRequest().authenticated())
                 .exceptionHandling(e -> e
                         // 401 when unauthenticated, 403 when authenticated but lacking the role.
