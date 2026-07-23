@@ -22,8 +22,8 @@ class AssistantConfigServiceTest {
         var view = service().view();
         assertThat(view.configured()).isFalse();
         assertThat(view.keyPreview()).isNull();
-        assertThat(view.baseUrl()).isEqualTo("https://api.anthropic.com");
-        assertThat(view.model()).isEqualTo("claude-opus-4-8");
+        assertThat(view.baseUrl()).isEmpty();
+        assertThat(view.model()).isEqualTo("claude-haiku-4-5-20251001");
         assertThat(service().isConfigured()).isFalse();
     }
 
@@ -37,10 +37,11 @@ class AssistantConfigServiceTest {
         assertThat(view.keyPreview()).doesNotContain("secret");
         assertThat(view.baseUrl()).isEqualTo("https://gw.example.com");
 
-        // A null apiKey updates the other fields but leaves the stored key intact.
+        // A null apiKey updates the other fields but leaves the stored key intact;
+        // a blank model resets to the default.
         service().update(null, "https://gw2.example.com", null);
         assertThat(service().apiKey()).isEqualTo("sk-secret-1234");
         assertThat(service().baseUrl()).isEqualTo("https://gw2.example.com");
-        assertThat(service().model()).isEqualTo("claude-opus-4-8");
+        assertThat(service().model()).isEqualTo("claude-haiku-4-5-20251001");
     }
 }

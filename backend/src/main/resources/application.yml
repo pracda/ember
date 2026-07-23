@@ -2,6 +2,11 @@ spring:
   application:
     name: ember-backend
 
+# Surface a controller's error reason (e.g. AI-gateway failures) in the JSON body.
+server:
+  error:
+    include-message: always
+
 # ---- Ember business configuration ----
 ember:
   tax-rate: 0.085          # 8.5% sales tax on the subtotal

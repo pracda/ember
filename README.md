@@ -72,7 +72,7 @@ A back-office for the menu, orders, reporting and staff.
 - **Analytics** — orders, revenue, average order value, sales over time, top items, category & order-type split, peak hours, and per-staff sales
 - **Scheduling & time-clock** — build the **roster** (shifts per staff), staff **clock in / out** from the station header, and a **shift-performance** report (hours worked + sales + sales/hour per staff)
 - **Employees** — a real staff store with per-employee **PIN** (stations) and **password** (admin), role management, and reset/deactivate
-- **AI assistant** — ask about the shop in plain English ("how were sales this week?", "who sold the most?", "what's running low?"). Answers are **grounded in live data** via server-side tools over the reporting endpoints — the model never invents figures. Requests go through a **secure LLM gateway**: the API key is stored in the admin panel and stays server-side, never in the browser.
+- **AI assistant** — ask about the shop in plain English ("how were sales this week?", "who sold the most?", "what's running low?"). Answers are **grounded in live data**: the backend injects a JSON snapshot of the shop's own reporting data (sales, staff hours, low stock, menu) into each request, and the model answers only from that — it never invents figures. Traffic goes through a **secure LLM gateway**: the API key is stored in the admin panel and stays server-side, never in the browser.
 
 **Auth & roles**
 - JWT auth with roles `CASHIER`, `COOK`, `MANAGER`
@@ -146,7 +146,7 @@ Open the four screens side by side → sign in on the POS (**Cashier / 1111**) �
 
 ### AI assistant (optional)
 
-The Admin **Assistant** tab is a chat grounded in the shop's live data. To enable it, open **⚙ Gateway settings** and paste your LLM-gateway **API key** (and, if different, its base URL and model). The key is stored server-side and never returned to the browser; requests are proxied through the gateway using the Anthropic Messages API. Until a key is set the tab shows the setup form and chat stays disabled.
+The Admin **Assistant** tab is a chat grounded in the shop's live data. To enable it, open **⚙ Gateway settings** and set your **LLM-gateway base URL**, **API key**, and **model**. The key is stored server-side and never returned to the browser; the backend calls the gateway at `POST {baseUrl}/api/v1/chat` with an `X-API-Key` header (the Secure LLM Gateway contract), passing a `{provider, model, systemPrompt, userMessage, history}` payload with the shop-data snapshot inlined. Until a key + base URL are set the tab shows the setup form and chat stays disabled.
 
 ---
 

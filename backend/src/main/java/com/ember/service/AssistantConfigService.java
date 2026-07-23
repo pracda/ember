@@ -18,8 +18,10 @@ public class AssistantConfigService {
     static final String KEY_BASE_URL = "assistant.baseUrl";
     static final String KEY_MODEL = "assistant.model";
 
-    static final String DEFAULT_BASE_URL = "https://api.anthropic.com";
-    static final String DEFAULT_MODEL = "claude-opus-4-8";
+    // The assistant routes through the Secure LLM Gateway; there is no sensible default URL
+    // (blank => not configured). The live gateway currently allows only this model.
+    static final String DEFAULT_BASE_URL = "";
+    static final String DEFAULT_MODEL = "claude-haiku-4-5-20251001";
 
     private final AppSettingRepository settings;
 
@@ -29,7 +31,7 @@ public class AssistantConfigService {
 
     @Transactional(readOnly = true)
     public boolean isConfigured() {
-        return !apiKey().isBlank();
+        return !apiKey().isBlank() && !baseUrl().isBlank();
     }
 
     @Transactional(readOnly = true)
@@ -39,8 +41,7 @@ public class AssistantConfigService {
 
     @Transactional(readOnly = true)
     public String baseUrl() {
-        String v = get(KEY_BASE_URL, DEFAULT_BASE_URL);
-        return v.isBlank() ? DEFAULT_BASE_URL : v;
+        return get(KEY_BASE_URL, DEFAULT_BASE_URL);
     }
 
     @Transactional(readOnly = true)
@@ -65,7 +66,7 @@ public class AssistantConfigService {
         if (apiKey != null) {
             put(KEY_API_KEY, apiKey.trim());
         }
-        put(KEY_BASE_URL, baseUrl == null || baseUrl.isBlank() ? DEFAULT_BASE_URL : baseUrl.trim());
+        put(KEY_BASE_URL, baseUrl == null ? "" : baseUrl.trim());
         put(KEY_MODEL, model == null || model.isBlank() ? DEFAULT_MODEL : model.trim());
         return view();
     }
